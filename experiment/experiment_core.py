@@ -39,18 +39,19 @@ def main(args, conf):
                        query_dir=conf['path']['query_dir'],
                        grid_dir=conf['path']['grid_dir'])
 
-    query_dir = join(conf['path']['query_dir'], collection_name)
-    query_files_names = [fn for fn in listdir(query_dir) if isfile(join(query_dir, fn))]
+    if args.exec_query:
+        query_dir = join(conf['path']['query_dir'], collection_name)
+        query_files_names = [fn for fn in listdir(query_dir) if isfile(join(query_dir, fn))]
 
-    for fn in query_files_names:
-        query = load_query(join(query_dir, fn))
-        exec_query(collection=client[db_name][collection_name],
-                   collection_name=collection_name,
-                   granularity=granularity,
-                   queries=query,
-                   query_file_name=fn,
-                   fig_dir=conf["path"]["fig_dir"],
-                   grid_dir=conf["path"]["grid_dir"])
+        for fn in query_files_names:
+            query = load_query(join(query_dir, fn))
+            exec_query(collection=client[db_name][collection_name],
+                       collection_name=collection_name,
+                       granularity=granularity,
+                       queries=query,
+                       query_file_name=fn,
+                       fig_dir=conf["path"]["fig_dir"],
+                       grid_dir=conf["path"]["grid_dir"])
 
     if client:
         client.close()
@@ -63,6 +64,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='This program evaluates the effectiveness of MongoDB query optimizer.')
     parser.add_argument('-b', '--builddb', action='store_true', help='builds database')
     parser.add_argument('-q', '--generatequery', action='store_true', help='generate queries for all experiments')
+    parser.add_argument('-r', '--runexperiment', action='store_true', help='run queries for all experiments')
     args = parser.parse_args()
     conf = get_conf()
     main(args, conf)
