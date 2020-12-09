@@ -3,6 +3,7 @@ import timeout_decorator
 import os
 import math
 from datetime import datetime
+import uuid
 
 from logger import logging_decorator
 from save_load import *
@@ -56,15 +57,21 @@ def generate_query(collection,
             if itr % 10000 == 0 and itr > 0:
                 os.system('clear')
 
-            a_predicate, a_lower, a_upper = generate_range_predicate(field_name="a", min=a_min, max=a_max)
-            b_predicate, b_lower, b_upper = generate_range_predicate(field_name="b", min=b_min, max=b_max)
-            a_i = map_to_index(a_predicate)
-            b_i = map_to_index(b_predicate)
-            print("a_i: {}, b_i: {}".format(a_i, b_i))
+            while 1:
+                b_predicate, b_lower, b_upper = generate_range_predicate(field_name="b", min=b_min, max=b_max)
+                b_i = map_to_index(b_predicate)
+                print("generating b_i: {}".format(b_i))
+                if 0 in visited_grid[b_i]:
+                    break
 
-            if visited_grid[b_i][a_i] == 1:
-                print("#" * 15 + "Retry" + "#" * 15)
-                continue
+            while 1:
+                a_predicate, a_lower, a_upper = generate_range_predicate(field_name="a", min=a_min, max=a_max)
+                a_i = map_to_index(a_predicate)
+                print("generated b_i: {}, generating a_i: {}".format(b_i, a_i))
+                if visited_grid[b_i][a_i] == 0:
+                    break
+
+            print("a_i: {}, b_i: {}".format(a_i, b_i))
 
             # mark pos as visited
             n_pos_visited += 1
@@ -83,12 +90,15 @@ def generate_query(collection,
                                                  "visited_grid_{}.txt".format(rep_id)))
             itr += 1
             print("Grid saved")
+
+            print("=" * 20)
         return
 
     rep_ctr = 0
 
     while rep_ctr < repetition:
-        rep_id = datetime.now().strftime("%m-%d-%Y_%H:%M:%S")
+        # rep_id = datetime.now().strftime("%m-%d-%Y_%H:%M:%S")
+        rep_id = uuid.uuid4().hex
         generate_query_helper(rep_id)
         rep_ctr += 1
     return
