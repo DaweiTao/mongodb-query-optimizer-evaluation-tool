@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 from matplotlib import colors
 import matplotlib.patches as mpatches
+import uuid
 import os
 from datetime import datetime
 from save_load import *
@@ -13,7 +14,7 @@ yellow ->  3  ->  tbl
 """
 
 
-def display_grid(grid, path, granularity, case_id):
+def display_grid(grid, path, granularity):
     plt.figure(figsize=(10, 10))
     step = int(100 / granularity)
     x = [x for x in range(granularity + 1)]
@@ -52,8 +53,7 @@ def display_grid(grid, path, granularity, case_id):
         if n % every_nth != 0:
             label.set_visible(False)
 
-    date_time = datetime.now().strftime("%m-%d-%Y_%H:%M:%S")
-    fig_name = "{}_{}.png".format(case_id, date_time)
+    fig_name = "{}.png".format(uuid.uuid4().hex)
     fig_path = os.path.join(path, fig_name)
     os.makedirs(os.path.dirname(fig_path), exist_ok=True)
     plt.savefig(fig_path, bbox_inches='tight')

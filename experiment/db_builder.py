@@ -2,6 +2,7 @@ import logging
 import random
 import pandas as pd
 import json
+import os.path
 from save_load import save_doc
 from save_load import load_doc
 from logger import logging_decorator
@@ -11,8 +12,9 @@ from logger import logging_decorator
 def build_db(client,
              db_name,
              collection_name,
+             distribution,
              dataset_size,
-             dataset_path,
+             dataset_dir,
              ):
 
     # Remove old data and indexes
@@ -21,13 +23,18 @@ def build_db(client,
     collection.drop()
 
     # Generate dataset
-    generate_dataset(dataset_size, dataset_path)
+    dataset_file_name = "{}_dist.txt".format(distribution)
+    dataset_path = os.path.join(dataset_dir, dataset_file_name)
+
+    if distribution == 'uniform':
+        generate_uniform_dataset(dataset_size, dataset_path)
+
     import_dataset(collection, dataset_path)
     create_indexes(collection)
 
 
 @logging_decorator
-def generate_dataset(dataset_size, dataset_path):
+def generate_uniform_dataset(dataset_size, dataset_path):
     a_list = [x for x in range(int(dataset_size))]
     b_list = [x for x in range(int(dataset_size))]
     random.shuffle(a_list)

@@ -91,8 +91,8 @@ def load_t_grid(path):
     grid_file = open(path, "r")
     grid = []
 
-    for l in grid_file:
-        tokens = l.split(",")
+    for row in grid_file:
+        tokens = row.split(",")
         temp_l = [x for x in tokens]
         grid.append(temp_l)
 

@@ -34,9 +34,8 @@ def exec_query(collection,
         # display result
         if itr_count % 50 == 0:
             display_grid(plan_grid,
-                         os.path.join(fig_dir, query_file_name.replace(".txt", "")),
-                         granularity,
-                         collection_name)
+                         os.path.join(fig_dir, collection_name, query_file_name.replace(".txt", "")),
+                         granularity)
 
         # timeout
         # t_win, t_a, t_b, t_cover, t_tbl = timeout, timeout, timeout, timeout, timeout
