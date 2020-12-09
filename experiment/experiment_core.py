@@ -19,7 +19,7 @@ def main(args, conf):
 
     client = establish_connection(conf['db']['connection_string'])
     db_name = conf['db']['db_name']
-    collection_name = conf['db']['collection_name']
+    collection_name = args.cname
     dataset_size = int(conf['db']['dataset_size'])
     granularity = int(conf['visual']['granularity'])
 
@@ -27,19 +27,20 @@ def main(args, conf):
         build_db(client=client,
                  db_name=db_name,
                  collection_name=collection_name,
+                 distribution=args.builddb,
                  dataset_size=dataset_size,
-                 dataset_path=conf['path']['dataset_path'])
+                 dataset_dir=conf['path']['dataset_dir'])
 
     if args.generatequery:
         generate_query(collection=client[db_name][collection_name],
                        collection_name=collection_name,
                        granularity=granularity,
                        dataset_size=dataset_size,
-                       repetition=int(conf['query']['repetition']),
+                       repetition=int(args.generatequery),
                        query_dir=conf['path']['query_dir'],
                        grid_dir=conf['path']['grid_dir'])
 
-    if args.exec_query:
+    if args.runexperiment:
         query_dir = join(conf['path']['query_dir'], collection_name)
         query_files_names = [fn for fn in listdir(query_dir) if isfile(join(query_dir, fn))]
 
@@ -62,8 +63,17 @@ def main(args, conf):
 if __name__ == '__main__':
     # read arguments
     parser = argparse.ArgumentParser(description='This program evaluates the effectiveness of MongoDB query optimizer.')
-    parser.add_argument('-b', '--builddb', action='store_true', help='builds database')
-    parser.add_argument('-q', '--generatequery', action='store_true', help='generate queries for all experiments')
+    parser.add_argument('cname',
+                        choices=['uniform', 'linear', 'normal', 'zipfian'],
+                        metavar='COLLECTIONNAME',
+                        help='specify collection name')
+    parser.add_argument('-b', '--builddb',
+                        choices=['uniform', 'linear', 'normal', 'zipfian'],
+                        help='build database')
+    parser.add_argument('-q', '--generatequery',
+                        type=int,
+                        metavar='REPETITION',
+                        help='generate queries for all experiments')
     parser.add_argument('-r', '--runexperiment', action='store_true', help='run queries for all experiments')
     args = parser.parse_args()
     conf = get_conf()
