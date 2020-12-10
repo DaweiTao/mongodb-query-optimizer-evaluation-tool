@@ -91,5 +91,5 @@ def exec_query(collection,
                                       "time_grid{}".format(query_file_name.replace("query", ""))))
 
     display_grid(plan_grid, os.path.join(fig_dir, collection_name, query_file_name.replace(".txt", "")),
-                 granularity, collection_name)
+                 granularity)
     return
