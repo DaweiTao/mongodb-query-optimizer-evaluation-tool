@@ -42,17 +42,20 @@ def main(args, conf):
 
     if args.runexperiment:
         query_dir = join(conf['path']['query_dir'], collection_name)
-        query_files_names = [fn for fn in listdir(query_dir) if isfile(join(query_dir, fn))]
+        try:
+            query_files_names = [fn for fn in listdir(query_dir) if isfile(join(query_dir, fn))]
 
-        for fn in query_files_names:
-            query = load_query(join(query_dir, fn))
-            exec_query(collection=client[db_name][collection_name],
-                       collection_name=collection_name,
-                       granularity=granularity,
-                       queries=query,
-                       query_file_name=fn,
-                       fig_dir=conf["path"]["fig_dir"],
-                       grid_dir=conf["path"]["grid_dir"])
+            for fn in query_files_names:
+                query = load_query(join(query_dir, fn))
+                exec_query(collection=client[db_name][collection_name],
+                           collection_name=collection_name,
+                           granularity=granularity,
+                           queries=query,
+                           query_file_name=fn,
+                           fig_dir=conf["path"]["fig_dir"],
+                           grid_dir=conf["path"]["grid_dir"])
+        except FileNotFoundError as e:
+            logger.error(e)
 
     if client:
         client.close()
