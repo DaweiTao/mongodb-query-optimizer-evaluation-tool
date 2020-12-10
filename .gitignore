@@ -128,5 +128,6 @@ dmypy.json
 *.DS_Store
 dataset/
 intermediate-result/
+processed-result/
 result/
 .idea/
