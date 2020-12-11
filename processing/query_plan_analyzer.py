@@ -1,3 +1,10 @@
+import sys
+sys.path.append('../experiment')
+from save_load import load_t_grid
+from save_load import load_grid
+from config_reader import get_conf
+import os
+
 import heapq
 import numpy as np
 from matplotlib import pyplot as plt
@@ -7,33 +14,27 @@ from datetime import datetime
 from os import listdir
 from os.path import isfile, join
 import argparse
-import sys
-sys.path.append('../experiment')
-from save_load import load_t_grid
-from save_load import load_grid
-from config_reader import get_conf
-import os
 
 
-def remove_outliers(grid, x, outlierConstant=3):
-    """
-    IQR
-    :param grid:
-    :param x:
-    :param outlierConstant:
-    :return:
-    """
+def remove_outliers(grid, x, outlierConstant=4):
     a = np.array(x)
     upper_quartile = np.percentile(a, 75)
     lower_quartile = np.percentile(a, 25)
     IQR = (upper_quartile - lower_quartile) * outlierConstant
     quartileSet = (lower_quartile - IQR, upper_quartile + IQR)
+    normal_val = []
+
+    for v in x:
+        if v > quartileSet[0] and v < quartileSet[1]:
+            normal_val.append(v)
+
+    max_val = max(normal_val)
 
     for r in range(len(grid)):
         for c in range(len(grid)):
             if grid[r][c] <= quartileSet[0] or grid[r][c] >= quartileSet[1]:
                 print("Removing outlier: {}".format(grid[r][c]))
-                grid[r][c] = 1
+                grid[r][c] = max_val
 
 
 def find_practical_winner(time_grid, plan_grid, granularity):
@@ -177,7 +178,7 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
     cbar = plt.colorbar()
     cbar.set_label("Impact factor", fontsize=15)
     format_fig(granularity=granularity)
-    fig_name = "{}_summary_accuracy:{:.2f}%_potential:{:.2f}%.png".format(identifier, accuracy, overall_improvement)
+    fig_name = "{}_summary_accuracy={:.2f}%_overall_percentage_change={:.2f}%.png".format(identifier, accuracy, overall_improvement)
     plt.figure(2).savefig(join(result_dir, fig_name), bbox_inches='tight')
     plt.close(fig='all')
 
@@ -239,6 +240,34 @@ def get_majority_plan_grid(plan_grid_paths, granularity):
     return majority_plan_grid
 
 
+def simulate_plan_cache_enabled(time_grid, granularity):
+    mongo_choice_t, a_t, b_t, cover_t, coll_t = time_grid
+
+    a_cached_time_grid = (a_t, a_t, b_t, cover_t, coll_t)
+    a_cached_plan_grid = [[1 for c in range(granularity)] for r in range(granularity)]
+    b_cached_time_grid = (b_t, a_t, b_t, cover_t, coll_t)
+    b_cached_plan_grid = [[2 for c in range(granularity)] for r in range(granularity)]
+    cover_cached_time_grid = (cover_t, a_t, b_t, cover_t, coll_t)
+    cover_cached_plan_grid = [[3 for c in range(granularity)] for r in range(granularity)]
+    coll_cached_time_grid = (coll_t, a_t, b_t, cover_t, coll_t)
+    coll_cached_plan_grid = [[4 for c in range(granularity)] for r in range(granularity)]
+
+    def visualize_result(t_grid, p_grid, identifier):
+        practical_winner_grid, performance_grid = find_practical_winner(t_grid, p_grid, granularity)
+        result_dir = conf['path']['result_dir']
+        accuracy = calculate_accuracy(practical_winner_grid, p_grid, granularity)
+        generate_visual(p_grid, practical_winner_grid, performance_grid,
+                        accuracy=accuracy,
+                        result_dir=result_dir,
+                        identifier=identifier,
+                        granularity=granularity)
+
+    visualize_result(a_cached_time_grid, a_cached_plan_grid, "plan_a_cached")
+    visualize_result(b_cached_time_grid, b_cached_plan_grid, "plan_b_cached")
+    visualize_result(cover_cached_time_grid, cover_cached_plan_grid, "plan_cover_cached")
+    visualize_result(coll_cached_time_grid, coll_cached_plan_grid, "plan_coll_cached")
+
+
 def main(args, conf):
     collection_name = args.cname
     grid_dir = join(conf['path']['grid_dir'], collection_name)
@@ -274,6 +303,7 @@ def main(args, conf):
         print("Accuracy: {}%".format(accuracy))
         print("=" * 50)
 
+    # average multiple experiment results
     time_grid_paths = [join(grid_dir, tn) for tn in time_grid_fns]
     avg_time_grid = get_avg_time_grid(time_grid_paths, granularity)
     plan_grid_paths = [join(grid_dir, pn) for pn in plan_grid_fns]
@@ -288,6 +318,9 @@ def main(args, conf):
                     identifier='avg',
                     granularity=granularity)
     print("Accuracy: {}%".format(accuracy))
+
+    # simulate an experiment case where query plan cache enabled
+    simulate_plan_cache_enabled(avg_time_grid, granularity)
 
 
 if __name__ == '__main__':
