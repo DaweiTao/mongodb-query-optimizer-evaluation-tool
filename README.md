@@ -18,7 +18,7 @@ obtain python3.
 
 To install the required Python modules, run:
 
-    $ python3 -m pip install requirements.txt
+    $ pip install -r requirements.txt
     
 Where to Get MongoDB Source Code
 ----- 
