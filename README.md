@@ -44,32 +44,33 @@ Specify configurations in the the configuration file [config.ini](https://github
 An example would be:
 ```
 [db]
-db_name = experiment
-collection_name = normalDist
-dataset_size = 1000000 
-connection_string = <mongodb_connection_string>
-
-[query]
-repetition = 3 # the number of times to repeat the experiment 
+db_name = experiment0
+dataset_size = 1000000
+connection_string = <connection_string>
 
 [visual]
-granularity = 50 # the dimension of the grid used for visualization 
+granularity = 50
 
 [path]
 log_file_path = ../exp.log
-dataset_path = ../dataset/intOnlyUnifromDist.txt
-
+dataset_dir = ../dataset
 query_dir = ../intermediate-result/query
 grid_dir = ../intermediate-result/grid
 fig_dir = ../intermediate-result/fig
-result_dir = ../result
+result_dir = ../processed-result/
 ```
 
 Build Database
 -----
-If this is the first time running the experiment, run:
+If no existing database, run:
 
-    $ python3 experiment/experiment_core -b [options]
+    $ python3 experiment/experiment_core COLLECTIONNAME -b [options]
+
+Available COLLECTIONNAME:
+* uniform 
+* normal
+* linear
+* zipfian 
 
 Available options:
 * uniform - default option, which generates a dataset with unifrom distribution
@@ -91,8 +92,7 @@ Generate Query For the Experiment
 ------
 If this is the first time running the experiment, run:
     
-    $ python3 experiment/experiment_core -q
-
+    $ python3 experiment/experiment_core COLLECTIONNAME -q REPITITION
 
 The script will persist all queries into `query_dir` specified in the config file.
 If `repetition` > 1, then multiple query files can be found in `query_dir`.
@@ -102,7 +102,7 @@ Force MongoDB to Execute All Query Plan Candidates
 -------
 To execute all queries, run:
 
-    $ python3 experiment/experiment_core -r
+    $ python3 experiment/experiment_core COLLECTIONNAME -r
 
 The script will persist results into `query_dir` specified in the config file. Results including:
 * plan_grid: a n * n grid records winning plans
@@ -114,7 +114,7 @@ Result Visualization:
 --------
 To visualize result, and see summaries of the results, run
 
-    $ python3 processing/query_plan_analyzer
+    $ python3 processing/query_plan_analyzer COLLECTIONNAME
     
 All results will be output to `result_dir`
 
