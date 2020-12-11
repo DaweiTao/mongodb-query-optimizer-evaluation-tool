@@ -66,7 +66,7 @@ If no existing database, run:
 
     $ python3 experiment/experiment_core COLLECTIONNAME -b [options]
 
-Available COLLECTIONNAME:
+Available `COLLECTIONNAME`:
 * uniform 
 * normal
 * linear
