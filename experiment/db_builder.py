@@ -29,14 +29,15 @@ def build_db(client,
     dataset_file_name = "{}_dist.txt".format(distribution)
     dataset_path = os.path.join(dataset_dir, dataset_file_name)
 
-    if distribution == 'uniform':
-        generate_uniform_dataset(dataset_size, dataset_path)
-    elif distribution == 'linear':
-        generate_linear_dataset(dataset_size, dataset_path)
-    elif distribution == 'normal':
-        generate_normal_dataset(dataset_size, dataset_path)
-    elif distribution == 'zipfian':
-        generate_zipfian_dataset(dataset_size, dataset_path)
+    if not os.path.exists(dataset_path):
+        if distribution == 'uniform':
+            generate_uniform_dataset(dataset_size, dataset_path)
+        elif distribution == 'linear':
+            generate_linear_dataset(dataset_size, dataset_path)
+        elif distribution == 'normal':
+            generate_normal_dataset(dataset_size, dataset_path)
+        elif distribution == 'zipfian':
+            generate_zipfian_dataset(dataset_size, dataset_path)
 
     import_dataset(collection, dataset_path)
     create_indexes(collection)

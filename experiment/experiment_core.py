@@ -5,6 +5,7 @@ from os.path import isfile, join
 
 from logger import init_logger
 from db_builder import build_db
+from db_builder import import_dataset
 from config_reader import get_conf, show_conf
 from db_connection import establish_connection
 from query import generate_query
@@ -30,6 +31,14 @@ def main(args, conf):
                  distribution=args.builddb,
                  dataset_size=dataset_size,
                  dataset_dir=conf['path']['dataset_dir'])
+
+    # if args.importdata:
+    #     collection = client[db_name][collection_name]
+    #     collection.drop_indexes()
+    #     collection.drop()
+    #     dataset_file_name = "{}_dist.txt".format(collection_name)
+    #     dataset_path = join(conf['path']['dataset_dir'], dataset_file_name)
+    #     import_dataset(collection=collection, dataset_path=dataset_path)
 
     if args.generatequery:
         generate_query(collection=client[db_name][collection_name],
@@ -73,6 +82,9 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--builddb',
                         choices=['uniform', 'linear', 'normal', 'zipfian'],
                         help='build database')
+    # parser.add_argument('-i', '--importdata',
+    #                     choices=['uniform', 'linear', 'normal', 'zipfian'],
+    #                     help='import dataset')
     parser.add_argument('-q', '--generatequery',
                         type=int,
                         metavar='REPETITION',
