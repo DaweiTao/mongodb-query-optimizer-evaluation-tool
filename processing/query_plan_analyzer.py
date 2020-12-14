@@ -16,25 +16,28 @@ from os.path import isfile, join
 import argparse
 
 
-def remove_outliers(grid, x, outlierConstant=4):
+def find_threshold(x, outlierConstant=2):
     a = np.array(x)
     upper_quartile = np.percentile(a, 75)
     lower_quartile = np.percentile(a, 25)
     IQR = (upper_quartile - lower_quartile) * outlierConstant
-    quartileSet = (lower_quartile - IQR, upper_quartile + IQR)
-    normal_val = []
+    quartile_set = (lower_quartile - IQR, upper_quartile + IQR)
+    outliers = []
 
     for v in x:
-        if v > quartileSet[0] and v < quartileSet[1]:
-            normal_val.append(v)
+        if v >= quartile_set[1]:
+            outliers.append(v)
 
-    max_val = max(normal_val)
+    if len(outliers) == 0:
+        return max(x)
 
-    for r in range(len(grid)):
-        for c in range(len(grid)):
-            if grid[r][c] <= quartileSet[0] or grid[r][c] >= quartileSet[1]:
-                print("Removing outlier: {}".format(grid[r][c]))
-                grid[r][c] = max_val
+    return min(outliers)
+
+    # for r in range(len(grid)):
+    #     for c in range(len(grid)):
+    #         if grid[r][c] <= quartileSet[0] or grid[r][c] >= quartileSet[1]:
+    #             print("Outlier: {}".format(grid[r][c]))
+    #             grid[r][c] = max_val
 
 
 def find_practical_winner(time_grid, plan_grid, granularity):
@@ -80,7 +83,7 @@ def find_practical_winner(time_grid, plan_grid, granularity):
                 performance_grid[r][c] = 0
 
     # remove outliers in the performance factors
-    remove_outliers(performance_grid, performance_factors)
+    # remove_outliers(performance_factors)
 
     return practical_winner_grid, performance_grid
 
@@ -145,7 +148,6 @@ def format_fig(granularity):
 
 
 def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, accuracy, result_dir, identifier, granularity):
-    os.makedirs(os.path.dirname(result_dir), exist_ok=True)
     plt.figure(num=0, figsize=(10, 10))
     plt.figure(num=1, figsize=(10, 10))
     plt.figure(num=2, figsize=(12, 10))
@@ -166,16 +168,20 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
     plt.figure(1).savefig(join(result_dir, fig_name), bbox_inches='tight')
 
     plt.figure(2)
-    elements = []
+    performance_factors = []
 
     for j in range(len(performance_grid)):
         for i in range(len(performance_grid)):
-            elements.append(performance_grid[j][i])
+            performance_factors.append(performance_grid[j][i])
 
-    overall_improvement = round((sum(elements) / len(elements)) * 100, 2)
+    threshold = find_threshold(performance_factors)
+    # performance_factors = [pf for pf in performance_factors if pf <= threshold]
+    overall_improvement = round((sum(performance_factors) / len(performance_factors)) * 100, 2)
+
     print("Overall improvements: {}%".format(overall_improvement))
-    plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=min(elements), vmax=max(elements))
-    cbar = plt.colorbar()
+    plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0, vmax=threshold)
+    cbar = plt.colorbar(extend='max')
+    cmap_err.set_over('black')
     cbar.set_label("Impact factor", fontsize=15)
     format_fig(granularity=granularity)
     fig_name = "{}_summary_accuracy={:.2f}%_overall_percentage_change={:.2f}%.png".format(identifier, accuracy, overall_improvement)
@@ -240,7 +246,7 @@ def get_majority_plan_grid(plan_grid_paths, granularity):
     return majority_plan_grid
 
 
-def simulate_plan_cache_enabled(time_grid, granularity):
+def simulate_plan_cache_enabled(time_grid, granularity, result_dir):
     mongo_choice_t, a_t, b_t, cover_t, coll_t = time_grid
 
     a_cached_time_grid = (a_t, a_t, b_t, cover_t, coll_t)
@@ -254,7 +260,6 @@ def simulate_plan_cache_enabled(time_grid, granularity):
 
     def visualize_result(t_grid, p_grid, identifier):
         practical_winner_grid, performance_grid = find_practical_winner(t_grid, p_grid, granularity)
-        result_dir = conf['path']['result_dir']
         accuracy = calculate_accuracy(practical_winner_grid, p_grid, granularity)
         generate_visual(p_grid, practical_winner_grid, performance_grid,
                         accuracy=accuracy,
@@ -270,6 +275,8 @@ def simulate_plan_cache_enabled(time_grid, granularity):
 
 def main(args, conf):
     collection_name = args.cname
+    result_dir = join(conf['path']['result_dir'], collection_name)
+    os.makedirs(result_dir, exist_ok=True)
     grid_dir = join(conf['path']['grid_dir'], collection_name)
     granularity = int(conf['visual']['granularity'])
     time_grid_fns = [fn for fn in listdir(grid_dir) if isfile(join(grid_dir, fn)) and 'time_grid' in fn]
@@ -293,7 +300,6 @@ def main(args, conf):
         plan_grid = load_grid(pp)
         practical_winner_grid, performance_grid = find_practical_winner(time_grid, plan_grid, granularity)
         mongo_picked_winner_grid = load_grid(pp)
-        result_dir = conf['path']['result_dir']
         accuracy = calculate_accuracy(practical_winner_grid, mongo_picked_winner_grid, granularity)
         generate_visual(mongo_picked_winner_grid, practical_winner_grid, performance_grid,
                         accuracy=accuracy,
@@ -303,24 +309,23 @@ def main(args, conf):
         print("Accuracy: {}%".format(accuracy))
         print("=" * 50)
 
-    # average multiple experiment results
+    # summarize multiple experiment results to generate a comprehensive result
     time_grid_paths = [join(grid_dir, tn) for tn in time_grid_fns]
     avg_time_grid = get_avg_time_grid(time_grid_paths, granularity)
     plan_grid_paths = [join(grid_dir, pn) for pn in plan_grid_fns]
     majority_plan_grid = get_majority_plan_grid(plan_grid_paths, granularity)
     practical_winner_grid, performance_grid = find_practical_winner(avg_time_grid, majority_plan_grid, granularity)
     mongo_picked_winner_grid = load_grid(pp)
-    result_dir = conf['path']['result_dir']
     accuracy = calculate_accuracy(practical_winner_grid, mongo_picked_winner_grid, granularity)
     generate_visual(mongo_picked_winner_grid, practical_winner_grid, performance_grid,
                     accuracy=accuracy,
                     result_dir=result_dir,
-                    identifier='avg',
+                    identifier='comprehensive',
                     granularity=granularity)
     print("Accuracy: {}%".format(accuracy))
 
     # simulate an experiment case where query plan cache enabled
-    simulate_plan_cache_enabled(avg_time_grid, granularity)
+    simulate_plan_cache_enabled(avg_time_grid, granularity, result_dir)
 
 
 if __name__ == '__main__':
