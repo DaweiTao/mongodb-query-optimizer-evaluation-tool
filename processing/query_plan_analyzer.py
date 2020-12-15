@@ -9,11 +9,13 @@ import heapq
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors
+from matplotlib.pyplot import cm
 import matplotlib.patches as mpatches
 from datetime import datetime
 from os import listdir
 from os.path import isfile, join
 import argparse
+import copy
 
 
 def find_threshold(x, outlierConstant=2):
@@ -153,7 +155,8 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
     plt.figure(num=2, figsize=(12, 10))
 
     cmap_common = colors.ListedColormap(['orange', 'green', 'blue', 'yellow'])
-    cmap_err = 'Reds'
+    cmap_err = copy.copy(plt.cm.get_cmap("Reds"))
+    cmap_err.set_over('black')
 
     plt.figure(0)
     plt.pcolor(practical_winner_grid, cmap=cmap_common, edgecolors='k', linewidths=1, vmin=1, vmax=4, alpha=1)
@@ -181,7 +184,8 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
     print("Overall improvements: {}%".format(overall_improvement))
     plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0, vmax=threshold)
     cbar = plt.colorbar(extend='max')
-    cbar.cmap.set_over('black')
+    # cmap
+    # cbar.cmap.set_over('black')
     cbar.set_label("Impact factor", fontsize=15)
     format_fig(granularity=granularity)
     fig_name = "{}_summary_accuracy={:.2f}%_overall_percentage_change={:.2f}%.png".format(identifier, accuracy, overall_improvement)
@@ -292,7 +296,7 @@ def main(args, conf):
                 break
 
     for time_grid_fn, plan_grid_fn in pairs:
-        print(tf, pf)
+        print(time_grid_fn, plan_grid_fn)
         identifier = time_grid_fn.replace('.txt', '').split('_')[-1]
         tp = join(grid_dir, time_grid_fn)
         pp = join(grid_dir, plan_grid_fn)
