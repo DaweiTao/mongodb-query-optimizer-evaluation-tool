@@ -181,7 +181,7 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
     print("Overall improvements: {}%".format(overall_improvement))
     plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0, vmax=threshold)
     cbar = plt.colorbar(extend='max')
-    cmap_err.set_over('black')
+    cbar.cmap.set_over('black')
     cbar.set_label("Impact factor", fontsize=15)
     format_fig(granularity=granularity)
     fig_name = "{}_summary_accuracy={:.2f}%_overall_percentage_change={:.2f}%.png".format(identifier, accuracy, overall_improvement)
