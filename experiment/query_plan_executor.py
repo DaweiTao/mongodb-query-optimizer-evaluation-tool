@@ -1,6 +1,7 @@
 import os
 from visualization import *
 from logger import logging_decorator
+from pprint import pprint
 
 
 @logging_decorator
@@ -26,40 +27,46 @@ def exec_query(collection,
     time_grid = [[-1 for i in range(granularity)] for j in range(granularity)]
     plan_grid = [[0 for i in range(granularity)] for j in range(granularity)]
     itr_count = 0
+    fig_id = 0
 
     for (query, b_i, a_i) in queries:
         progress = round(float(itr_count) * 100 / len(queries), 2)
         print("Progress {}%".format(progress))
 
         # display result
-        if itr_count % 50 == 0:
+        if progress % 2 < 0.001:
             display_grid(plan_grid,
-                         os.path.join(fig_dir, collection_name, query_file_name.replace(".txt", "")),
-                         granularity)
+                         os.path.join(fig_dir,
+                                      collection_name,
+                                      query_file_name.replace(".txt", "")),
+                         granularity,
+                         id="fig_{:0>5d}".format(fig_id))
+            fig_id += 1
 
         # timeout
         # t_win, t_a, t_b, t_cover, t_tbl = timeout, timeout, timeout, timeout, timeout
+        projection = {"_id": 0, "a": 1, "b": 1}
 
         # measure time consumption of executing each query plan
         print("Forcing collscan")
-        table_scan_explain = collection.find(query).hint([("$natural", 1)]).explain()
+        table_scan_explain = collection.find(query, projection).hint([("$natural", 1)]).explain()
         t_tbl = table_scan_explain["executionStats"]["executionTimeMillis"]
 
         print("Forcing aIdx")
-        idx_a_explain = collection.find(query).hint("aIdx").explain()
+        idx_a_explain = collection.find(query, projection).hint("aIdx").explain()
         t_a = idx_a_explain["executionStats"]["executionTimeMillis"]
 
         print("Forcing bIdx")
-        idx_b_explain = collection.find(query).hint("bIdx").explain()
+        idx_b_explain = collection.find(query, projection).hint("bIdx").explain()
         t_b = idx_b_explain["executionStats"]["executionTimeMillis"]
 
         print("Forcing coverIdx")
-        idx_cover_explain = collection.find(query).hint("coverIdx").explain()
+        idx_cover_explain = collection.find(query, projection).hint("coverIdx").explain()
         t_cover = idx_cover_explain["executionStats"]["executionTimeMillis"]
 
-        # measure time consumption of executing winning plan
+        # run the query without hint
         print("Finding winner")
-        exec_explain = collection.find(query).explain()
+        exec_explain = collection.find(query, projection).explain()
         t_win = exec_explain["executionStats"]["executionTimeMillis"]
 
         # record time
@@ -79,7 +86,7 @@ def exec_query(collection,
         elif 'COLLSCAN' in winning_plan:
             plan_grid[b_i][a_i] = 4
 
-        print("Winnning Plan: {}".format(winning_plan))
+        pprint(exec_explain['queryPlanner'])
         print("Time: Winning: {}, a: {}, b: {}, cover: {} ,collscan: {}".format(t_win, t_a, t_b, t_cover, t_tbl))
         print("=" * 60)
 
@@ -90,6 +97,4 @@ def exec_query(collection,
     save_grid(time_grid, os.path.join(grid_dir, collection_name,
                                       "time_grid{}".format(query_file_name.replace("query", ""))))
 
-    display_grid(plan_grid, os.path.join(fig_dir, collection_name, query_file_name.replace(".txt", "")),
-                 granularity)
     return

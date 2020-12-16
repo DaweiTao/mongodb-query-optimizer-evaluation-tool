@@ -69,7 +69,7 @@ def save_query(path, a_min, a_max, b_min, b_max, b_i, a_i):
 
 def load_query(path):
     lines = open(path, "r")
-    query_info = []
+    queries = []
 
     for l in lines:
         nums = l.split(",")
@@ -82,9 +82,9 @@ def load_query(path):
 
         query = {"a": {"$gte": a_lower_bound, "$lt": a_upper_bound},
                  "b": {"$gte": b_lower_bound, "$lt": b_upper_bound}}
-        query_info.append((query, b_i, a_i))
+        queries.append((query, b_i, a_i))
 
-    return query_info
+    return queries
 
 
 def load_t_grid(path):
