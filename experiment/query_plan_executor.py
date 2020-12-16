@@ -97,4 +97,10 @@ def exec_query(collection,
     save_grid(time_grid, os.path.join(grid_dir, collection_name,
                                       "time_grid{}".format(query_file_name.replace("query", ""))))
 
+    display_grid(plan_grid,
+                 os.path.join(fig_dir,
+                              collection_name,
+                              query_file_name.replace(".txt", "")),
+                 granularity,
+                 id="fig_{:0>5d}".format(fig_id))
     return
