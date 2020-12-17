@@ -18,7 +18,7 @@ import argparse
 import copy
 
 
-def find_threshold(x, outlierConstant=2):
+def find_threshold(x, outlierConstant=3):
     a = np.array(x)
     upper_quartile = np.percentile(a, 75)
     lower_quartile = np.percentile(a, 25)
@@ -26,12 +26,14 @@ def find_threshold(x, outlierConstant=2):
     quartile_set = (lower_quartile - IQR, upper_quartile + IQR)
     outliers = []
 
-    for v in x:
-        if v >= quartile_set[1]:
+    for v in list(a):
+        if v > quartile_set[1]:
             outliers.append(v)
 
+    print("# of outliers: {}".format(len(outliers)))
+
     if len(outliers) == 0:
-        return max(x)
+        return max(v)
 
     return min(outliers)
 
@@ -157,6 +159,7 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
     cmap_common = colors.ListedColormap(['orange', 'green', 'blue', 'yellow'])
     cmap_err = copy.copy(plt.cm.get_cmap("Reds"))
     cmap_err.set_over('black')
+    cmap_err.set_under('green')
 
     plt.figure(0)
     plt.pcolor(practical_winner_grid, cmap=cmap_common, edgecolors='k', linewidths=1, vmin=1, vmax=4, alpha=1)
@@ -175,20 +178,21 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
 
     for j in range(len(performance_grid)):
         for i in range(len(performance_grid)):
+            if performance_grid[j][i] < 0:
+                print(performance_grid[j][i])
             performance_factors.append(performance_grid[j][i])
 
     threshold = find_threshold(performance_factors)
+    print("Threshold:{}".format(threshold))
     # performance_factors = [pf for pf in performance_factors if pf <= threshold]
-    overall_improvement = round((sum(performance_factors) / len(performance_factors)) * 100, 2)
+    overall_delta = round((sum(performance_factors) / len(performance_factors)) * 100, 2)
 
-    print("Overall improvements: {}%".format(overall_improvement))
+    print("Overall percentage change: {}%".format(overall_delta))
     plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0, vmax=threshold)
-    cbar = plt.colorbar(extend='max')
-    # cmap
-    # cbar.cmap.set_over('black')
+    cbar = plt.colorbar(extend='both')
     cbar.set_label("Impact factor", fontsize=15)
     format_fig(granularity=granularity)
-    fig_name = "{}_summary_accuracy={:.2f}%_overall_percentage_change={:.2f}%.png".format(identifier, accuracy, overall_improvement)
+    fig_name = "{}_summary_accuracy={:.2f}%_overall_percentage_change={:.2f}%.png".format(identifier, accuracy, overall_delta)
     plt.figure(2).savefig(join(result_dir, fig_name), bbox_inches='tight')
     plt.close(fig='all')
 
@@ -200,16 +204,17 @@ def get_avg_time_grid(time_grid_paths, granularity):
     avg_cover_t = [[0 for c in range(granularity)] for r in range(granularity)]
     avg_coll_t = [[0 for c in range(granularity)] for r in range(granularity)]
     n = len(time_grid_paths)
+    print("n: {}".format(n))
 
     for tp in time_grid_paths:
         mongo_choice_t, a_t, b_t, cover_t, coll_t = load_t_grid(tp)
         for r in range(granularity):
             for c in range(granularity):
-                avg_mongo_choice_t[r][c] += mongo_choice_t[r][c] / n
-                avg_a_t[r][c] += a_t[r][c] / n
-                avg_b_t[r][c] += b_t[r][c] / n
-                avg_coll_t[r][c] += coll_t[r][c] / n
-                avg_cover_t[r][c] += cover_t[r][c] / n
+                avg_mongo_choice_t[r][c] += (mongo_choice_t[r][c] / n)
+                avg_a_t[r][c] += (a_t[r][c] / n)
+                avg_b_t[r][c] += (b_t[r][c] / n)
+                avg_coll_t[r][c] += (coll_t[r][c] / n)
+                avg_cover_t[r][c] += (cover_t[r][c] / n)
     return avg_mongo_choice_t, avg_a_t, avg_b_t, avg_cover_t, avg_coll_t
 
 
