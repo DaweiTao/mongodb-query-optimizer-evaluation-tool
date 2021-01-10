@@ -28,6 +28,7 @@ def exec_query(collection,
     plan_grid = [[0 for i in range(granularity)] for j in range(granularity)]
     itr_count = 0
     fig_id = 0
+    timeout = 999999
 
     for (query, b_i, a_i) in queries:
         progress = round(float(itr_count) * 100 / len(queries), 2)
@@ -61,8 +62,10 @@ def exec_query(collection,
         t_b = idx_b_explain["executionStats"]["executionTimeMillis"]
 
         print("Forcing coverIdx")
-        idx_cover_explain = collection.find(query, projection).hint("coverIdx").explain()
-        t_cover = idx_cover_explain["executionStats"]["executionTimeMillis"]
+        t_cover = timeout
+        if "coverIdx" in collection.index_information():
+            idx_cover_explain = collection.find(query, projection).hint("coverIdx").explain()
+            t_cover = idx_cover_explain["executionStats"]["executionTimeMillis"]
 
         # run the query without hint
         print("Finding winner")
