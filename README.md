@@ -98,6 +98,27 @@ The script will persist all queries into `query_dir` specified in the config fil
 If `repetition` > 1, then multiple query files can be found in `query_dir`.
 
 
+During the process, intermidate results will be saved in these three directories:
+* `query_dir`: stores query files 
+* `grid_dir`: stores two kinds of 2D array
+    * plan_grid: stores winning plans
+    * time_grid: records execution time of query plans 
+* grid_dir = ../intermediate-result/grid
+* fig_dir = ../intermediate-result/fig
+
+
+Naming convention of query files:
+* A universally unique identifier (UUID) is assigned to each query file. 
+	* Format: `query_<UUID>.txt`
+	* An example would be: `query_6d478179f7dd41099067c9bb7d09abd7.txt`
+* The UUID is used to associate queries with corresponding results. 
+
+Naming convention of grids:
+*  time grid: `time_grid_<UUID>.txt`, where UUID refering to the query file which is used to generate this grid  
+*  plan grid: `plan_grid_<UUID>.txt`, where UUID refering to the query file which is used to generate this grid  
+
+
+
 Force MongoDB to Execute All Query Plan Candidates
 -------
 To execute all queries, run:
@@ -110,6 +131,10 @@ The script will persist results into `query_dir` specified in the config file. R
 
 If `repetition` > 1, then multiple plan_grid and time_grid can be found in `query_dir`.
 
+
+During the process, 
+
+
 Result Visualization:
 --------
 To visualize result, and see summaries of the results, run
@@ -118,6 +143,10 @@ To visualize result, and see summaries of the results, run
     
 All results will be output to `result_dir`
 
+
 Log File
 -------
 Execptions and experiment will be saved in `log_file_path`
+
+
+
