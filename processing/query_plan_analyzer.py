@@ -182,13 +182,16 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
                 print(performance_grid[j][i])
             performance_factors.append(performance_grid[j][i])
 
-    threshold = find_threshold(performance_factors)
-    print("Threshold:{}".format(threshold))
+    # threshold = find_threshold(performance_factors)
+    # print("Threshold:{}".format(threshold))
+
     # performance_factors = [pf for pf in performance_factors if pf <= threshold]
     overall_delta = round((sum(performance_factors) / len(performance_factors)) * 100, 2)
 
     print("Overall percentage change: {}%".format(overall_delta))
-    plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0, vmax=threshold)
+    # plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0, vmax=threshold)
+    plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0)
+
     cbar = plt.colorbar(extend='both')
     cbar.set_label("Impact factor", fontsize=15)
     format_fig(granularity=granularity)
