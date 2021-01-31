@@ -188,14 +188,14 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
     # performance_factors = [pf for pf in performance_factors if pf <= threshold]
     overall_delta = round((sum(performance_factors) / len(performance_factors)) * 100, 2)
 
-    print("Overall percentage change: {}%".format(overall_delta))
+    print("Overall percentage change: {}percent".format(overall_delta))
     # plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0, vmax=threshold)
     plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0)
 
     cbar = plt.colorbar(extend='both')
     cbar.set_label("Impact factor", fontsize=15)
     format_fig(granularity=granularity)
-    fig_name = "{}_summary_accuracy={:.2f}%_overall_percentage_change={:.2f}%.png".format(identifier, accuracy, overall_delta)
+    fig_name = "{}_summary_accuracy={:.2f}percent_overall_percentage_change={:.2f}percent.png".format(identifier, accuracy, overall_delta)
     plt.figure(2).savefig(join(result_dir, fig_name), bbox_inches='tight')
     plt.close(fig='all')
 
@@ -285,8 +285,102 @@ def simulate_plan_cache_enabled(time_grid, granularity, result_dir):
     visualize_result(coll_cached_time_grid, coll_cached_plan_grid, "plan_coll_cached")
 
 
+def analyze_plan_cache(p_grid, t_grid, granularity, cover_idx_exists):
+    size = granularity * granularity
+
+    def compute_plan_weight():
+        plan_a_count = 0
+        plan_b_count = 0
+        plan_cover_count = 0
+        plan_coll_count = 0
+
+        for r in range(granularity):
+            for c in range(granularity):
+                if p_grid[r][c] == 1:
+                    plan_a_count += 1
+                elif p_grid[r][c] == 2:
+                    plan_b_count += 1
+                elif p_grid[r][c] == 3:
+                    plan_cover_count += 1
+                elif p_grid[r][c] == 4:
+                    plan_coll_count += 1
+
+        return plan_a_count / size, plan_b_count / size, plan_cover_count / size, plan_coll_count / size
+
+    a_weight, b_weight, cover_weight, coll_weight = compute_plan_weight()
+    avg_mongo_choice_t, avg_a_t, avg_b_t, avg_cover_t, avg_coll_t = t_grid
+    impact_grid = [[1 for c in range(granularity)] for r in range(granularity)]
+    avg_impact_factor = 0
+
+    if not cover_idx_exists:
+        for r in range(granularity):
+            for c in range(granularity):
+                a_t = avg_a_t[r][c]
+                b_t = avg_b_t[r][c]
+                coll_t = avg_coll_t[r][c]
+                weighted_time = a_weight * a_t + b_weight * b_t + coll_weight * coll_t
+                impact_factor = weighted_time / min([a_t, b_t, coll_t])
+                impact_grid[r][c] = impact_factor
+                avg_impact_factor += impact_factor
+    else:
+        for r in range(granularity):
+            for c in range(granularity):
+                a_t = avg_a_t[r][c]
+                b_t = avg_b_t[r][c]
+                cover_t = avg_cover_t[r][c]
+                coll_t = avg_coll_t[r][c]
+                weighted_time = a_weight * a_t + b_weight * b_t + cover_t * cover_weight + coll_weight * coll_t
+                impact_factor = weighted_time / min([a_t, b_t, cover_t, coll_t])
+                impact_grid[r][c] = impact_factor
+                avg_impact_factor += impact_factor
+
+    return impact_grid, avg_impact_factor / size
+
+
+def visualize_cache_impact(impact_grid, avg_impact_factor, result_dir, granularity):
+    plt.figure(num=0, figsize=(12, 10))
+    cmap_err = copy.copy(plt.cm.get_cmap("Reds"))
+    cmap_err.set_over('black')
+    cmap_err.set_under('green')
+    plt.figure(0)
+
+    x = []
+    for r in range(granularity):
+        for c in range(granularity):
+            x.append(impact_grid[r][c])
+    impact_max = find_threshold(x)
+
+    plt.pcolor(impact_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0, vmax=impact_max)
+    cbar = plt.colorbar(extend='both')
+    cbar.set_label("Impact factor", fontsize=15)
+
+    step = int(100 / granularity)
+    x = [x for x in range(granularity + 1)]
+    x_b = [xi / 100 for xi in range(0, 101, step)]
+
+    plt.xticks(x, x_b, fontsize=12)
+    plt.yticks(x, x_b, fontsize=12)
+
+    every_nth = 5
+
+    for n, label in enumerate(plt.gca().xaxis.get_ticklabels()):
+        if n % every_nth != 0:
+            label.set_visible(False)
+
+    for n, label in enumerate(plt.gca().yaxis.get_ticklabels()):
+        if n % every_nth != 0:
+            label.set_visible(False)
+
+    plt.xlabel("Selectivity for range predicate on field A", fontsize=15)
+    plt.ylabel("Selectivity for range predicate on field B", fontsize=15)
+    fig_name = "cache_impact_factor={:.2f}.png".format(avg_impact_factor)
+    plt.figure(0).savefig(join(result_dir, fig_name), bbox_inches='tight')
+    plt.close(fig='all')
+
+
 def main(args, conf):
     collection_name = args.cname
+    cover_idx_exists = args.coveridxexists
     result_dir = join(conf['path']['result_dir'], collection_name)
     os.makedirs(result_dir, exist_ok=True)
     grid_dir = join(conf['path']['grid_dir'], collection_name)
@@ -318,7 +412,7 @@ def main(args, conf):
                         result_dir=result_dir,
                         identifier=identifier,
                         granularity=granularity)
-        print("Accuracy: {}%".format(accuracy))
+        print("Accuracy: {}percent".format(accuracy))
         print("=" * 50)
 
     # summarize multiple experiment results to generate a comprehensive result
@@ -334,10 +428,16 @@ def main(args, conf):
                     result_dir=result_dir,
                     identifier='comprehensive',
                     granularity=granularity)
-    print("Accuracy: {}%".format(accuracy))
+    print("Accuracy: {}percent".format(accuracy))
 
     # simulate an experiment case where query plan cache enabled
-    simulate_plan_cache_enabled(avg_time_grid, granularity, result_dir)
+    # simulate_plan_cache_enabled(avg_time_grid, granularity, result_dir)
+    impact_grid, avg_impact_factor = analyze_plan_cache(p_grid=majority_plan_grid,
+                                     t_grid=avg_time_grid,
+                                     granularity=granularity,
+                                     cover_idx_exists=cover_idx_exists)
+    visualize_cache_impact(impact_grid, avg_impact_factor, result_dir, granularity)
+    print("Avg impact factor: {}".format(avg_impact_factor))
 
 
 if __name__ == '__main__':
@@ -346,6 +446,10 @@ if __name__ == '__main__':
                         choices=['uniform', 'linear', 'normal', 'zipfian'],
                         metavar='COLLECTIONNAME',
                         help='specify collection name')
+    parser.add_argument('coveridxexists',
+                        type=bool,
+                        metavar='COVERIDXEXISTS',
+                        help='specify whether covering index exists')
     args = parser.parse_args()
     conf = get_conf('../experiment/config.ini')
     main(args, conf)
