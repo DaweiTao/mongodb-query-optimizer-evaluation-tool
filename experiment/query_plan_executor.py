@@ -54,8 +54,10 @@ def exec_query(collection,
         t_tbl = table_scan_explain["executionStats"]["executionTimeMillis"]
 
         print("Forcing aIdx")
-        idx_a_explain = collection.find(query, projection).hint("aIdx").explain()
-        t_a = idx_a_explain["executionStats"]["executionTimeMillis"]
+        t_a = timeout
+        if "aIdx" in collection.index_information():
+            idx_a_explain = collection.find(query, projection).hint("aIdx").explain()
+            t_a = idx_a_explain["executionStats"]["executionTimeMillis"]
 
         print("Forcing bIdx")
         idx_b_explain = collection.find(query, projection).hint("bIdx").explain()
