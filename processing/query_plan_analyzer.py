@@ -78,13 +78,13 @@ def find_practical_winner(time_grid, plan_grid, granularity):
             practical_winner_grid[r][c] = practical_winner
 
             if practical_winner != mongo_picked_plan:
-                performance_factor = (mongo_picked_plan_t - practical_winner_t) / (practical_winner_t + 0.00001)
+                performance_factor = mongo_picked_plan_t / (practical_winner_t + 0.00001)
                 performance_grid[r][c] = performance_factor
                 performance_factors.append(performance_factor)
                 # if performance_factor < 0:
                 #     print("performance factor: {}".format(str(performance_factor)))
             else:
-                performance_grid[r][c] = 0
+                performance_grid[r][c] = 1
 
     # remove outliers in the performance factors
     # remove_outliers(performance_factors)
@@ -104,7 +104,7 @@ def calculate_accuracy(grid_a, grid_b, granularity):
     return round(correct_count * 100 / size, 2)
 
 
-def format_fig(granularity):
+def format_fig(granularity, cover_idx_exists):
     # x, y axis
     step = int(100 / granularity)
     x = [x for x in range(granularity + 1)]
@@ -129,29 +129,51 @@ def format_fig(granularity):
     # legend
     orange_patch = mpatches.Patch(color='orange', label='A')
     green_patch = mpatches.Patch(color='green', label='B')
-    blue_patch = mpatches.Patch(color='blue', label='Cover')
     yellow_patch = mpatches.Patch(color='yellow', label='Coll')
 
     plt.figure(0)
-    plt.legend(handles=[orange_patch, green_patch, blue_patch, yellow_patch],
-            bbox_to_anchor=(1.05, 1),
-            loc='upper left',
-            borderaxespad=0.,
-            facecolor='lightgray',
-            framealpha=1,
-            prop={'size': 15})
+    if cover_idx_exists:
+        blue_patch = mpatches.Patch(color='blue', label='Cover')
+        print("Covering index exists")
+        plt.legend(handles=[orange_patch, green_patch, blue_patch, yellow_patch],
+                bbox_to_anchor=(1.05, 1),
+                loc='upper left',
+                borderaxespad=0.,
+                facecolor='lightgray',
+                framealpha=1,
+                prop={'size': 15})
+    else:
+        print("Covering index not exists")
+        plt.legend(handles=[orange_patch, green_patch, yellow_patch],
+                   bbox_to_anchor=(1.05, 1),
+                   loc='upper left',
+                   borderaxespad=0.,
+                   facecolor='lightgray',
+                   framealpha=1,
+                   prop={'size': 15})
 
     plt.figure(1)
-    plt.legend(handles=[orange_patch, green_patch, blue_patch, yellow_patch],
-            bbox_to_anchor=(1.05, 1),
-            loc='upper left',
-            borderaxespad=0.,
-            facecolor='lightgray',
-            framealpha=1,
-            prop={'size': 15})
+    if cover_idx_exists:
+        print("Covering index exists")
+        plt.legend(handles=[orange_patch, green_patch, blue_patch, yellow_patch],
+                bbox_to_anchor=(1.05, 1),
+                loc='upper left',
+                borderaxespad=0.,
+                facecolor='lightgray',
+                framealpha=1,
+                prop={'size': 15})
+    else:
+        print("Covering index not exists")
+        plt.legend(handles=[orange_patch, green_patch, yellow_patch],
+                   bbox_to_anchor=(1.05, 1),
+                   loc='upper left',
+                   borderaxespad=0.,
+                   facecolor='lightgray',
+                   framealpha=1,
+                   prop={'size': 15})
 
 
-def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, accuracy, result_dir, identifier, granularity):
+def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, accuracy, result_dir, identifier, granularity, cover_idx_exists):
     plt.figure(num=0, figsize=(10, 10))
     plt.figure(num=1, figsize=(10, 10))
     plt.figure(num=2, figsize=(12, 10))
@@ -163,13 +185,13 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
 
     plt.figure(0)
     plt.pcolor(practical_winner_grid, cmap=cmap_common, edgecolors='k', linewidths=1, vmin=1, vmax=4, alpha=1)
-    format_fig(granularity=granularity)
+    format_fig(granularity=granularity, cover_idx_exists=cover_idx_exists)
     fig_name = "{}_practical_winner.png".format(identifier)
     plt.figure(0).savefig(join(result_dir, fig_name), bbox_inches='tight')
 
     plt.figure(1)
     plt.pcolor(mongo_choice_grid, cmap=cmap_common, edgecolors='k', linewidths=1, vmin=1, vmax=4, alpha=1)
-    format_fig(granularity=granularity)
+    format_fig(granularity=granularity, cover_idx_exists=cover_idx_exists)
     fig_name = "{}_mongo_choice.png".format(identifier)
     plt.figure(1).savefig(join(result_dir, fig_name), bbox_inches='tight')
 
@@ -186,16 +208,16 @@ def generate_visual(mongo_choice_grid, practical_winner_grid, performance_grid, 
     # print("Threshold:{}".format(threshold))
 
     # performance_factors = [pf for pf in performance_factors if pf <= threshold]
-    overall_delta = round((sum(performance_factors) / len(performance_factors)) * 100, 2)
+    avg_impact = sum(performance_factors) / len(performance_factors)
 
-    print("Overall percentage change: {}percent".format(overall_delta))
+    print("Impact factor: {}".format(avg_impact))
     # plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0, vmax=threshold)
-    plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0)
+    plt.pcolor(performance_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=1)
 
     cbar = plt.colorbar(extend='both')
     cbar.set_label("Impact factor", fontsize=15)
-    format_fig(granularity=granularity)
-    fig_name = "{}_summary_accuracy={:.2f}percent_overall_percentage_change={:.2f}percent.png".format(identifier, accuracy, overall_delta)
+    format_fig(granularity=granularity, cover_idx_exists=cover_idx_exists)
+    fig_name = "{}_summary_accuracy={:.2f}_impact_factor={:.5f}.png".format(identifier, accuracy, avg_impact)
     plt.figure(2).savefig(join(result_dir, fig_name), bbox_inches='tight')
     plt.close(fig='all')
 
@@ -308,6 +330,8 @@ def analyze_plan_cache(p_grid, t_grid, granularity, cover_idx_exists):
         return plan_a_count / size, plan_b_count / size, plan_cover_count / size, plan_coll_count / size
 
     a_weight, b_weight, cover_weight, coll_weight = compute_plan_weight()
+    print("Plan weight:")
+    print(a_weight, b_weight, cover_weight, coll_weight)
     avg_mongo_choice_t, avg_a_t, avg_b_t, avg_cover_t, avg_coll_t = t_grid
     impact_grid = [[1 for c in range(granularity)] for r in range(granularity)]
     avg_impact_factor = 0
@@ -350,7 +374,7 @@ def visualize_cache_impact(impact_grid, avg_impact_factor, result_dir, granulari
             x.append(impact_grid[r][c])
     impact_max = find_threshold(x)
 
-    plt.pcolor(impact_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=0, vmax=impact_max)
+    plt.pcolor(impact_grid, cmap=cmap_err, edgecolors='k', linewidths=1, alpha=1, vmin=1, vmax=impact_max)
     cbar = plt.colorbar(extend='both')
     cbar.set_label("Impact factor", fontsize=15)
 
@@ -373,7 +397,7 @@ def visualize_cache_impact(impact_grid, avg_impact_factor, result_dir, granulari
 
     plt.xlabel("Selectivity for range predicate on field A", fontsize=15)
     plt.ylabel("Selectivity for range predicate on field B", fontsize=15)
-    fig_name = "cache_impact_factor={:.2f}.png".format(avg_impact_factor)
+    fig_name = "cache_impact_factor={:.5f}.png".format(avg_impact_factor)
     plt.figure(0).savefig(join(result_dir, fig_name), bbox_inches='tight')
     plt.close(fig='all')
 
@@ -381,6 +405,7 @@ def visualize_cache_impact(impact_grid, avg_impact_factor, result_dir, granulari
 def main(args, conf):
     collection_name = args.cname
     cover_idx_exists = args.coveridxexists
+    print("cover index exists? {}".format(cover_idx_exists))
     result_dir = join(conf['path']['result_dir'], collection_name)
     os.makedirs(result_dir, exist_ok=True)
     grid_dir = join(conf['path']['grid_dir'], collection_name)
@@ -411,7 +436,8 @@ def main(args, conf):
                         accuracy=accuracy,
                         result_dir=result_dir,
                         identifier=identifier,
-                        granularity=granularity)
+                        granularity=granularity,
+                        cover_idx_exists=cover_idx_exists)
         print("Accuracy: {}percent".format(accuracy))
         print("=" * 50)
 
@@ -427,7 +453,8 @@ def main(args, conf):
                     accuracy=accuracy,
                     result_dir=result_dir,
                     identifier='comprehensive',
-                    granularity=granularity)
+                    granularity=granularity,
+                    cover_idx_exists=cover_idx_exists)
     print("Accuracy: {}percent".format(accuracy))
 
     # simulate an experiment case where query plan cache enabled
@@ -437,7 +464,7 @@ def main(args, conf):
                                      granularity=granularity,
                                      cover_idx_exists=cover_idx_exists)
     visualize_cache_impact(impact_grid, avg_impact_factor, result_dir, granularity)
-    print("Avg impact factor: {}".format(avg_impact_factor))
+    print("Avg impact factor: {:.5f}".format(avg_impact_factor))
 
 
 if __name__ == '__main__':
@@ -447,8 +474,8 @@ if __name__ == '__main__':
                         metavar='COLLECTIONNAME',
                         help='specify collection name')
     parser.add_argument('coveridxexists',
-                        type=bool,
-                        metavar='COVERIDXEXISTS',
+                        choices=[True, False],
+                        type=eval,
                         help='specify whether covering index exists')
     args = parser.parse_args()
     conf = get_conf('../experiment/config.ini')
