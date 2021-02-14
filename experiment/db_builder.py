@@ -30,6 +30,7 @@ def build_db(client,
     dataset_path = os.path.join(dataset_dir, dataset_file_name)
 
     if not os.path.exists(dataset_path):
+        print("Creating dataset: {}...".format(dataset_path))
         if distribution == 'uniform':
             generate_uniform_dataset(dataset_size, dataset_path)
         elif distribution == 'linear':
@@ -38,7 +39,9 @@ def build_db(client,
             generate_normal_dataset(dataset_size, dataset_path)
         elif distribution == 'zipfian':
             generate_zipfian_dataset(dataset_size, dataset_path)
-
+    else:
+        print("Dateset file: {} exists".format(dataset_path))
+    print("Importing dateset...")
     import_dataset(collection, dataset_path)
     create_indexes(collection)
 
