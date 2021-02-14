@@ -98,7 +98,7 @@ def load_t_grid(path):
 
     grid_file.close()
 
-    winning_grid = [[-1 for i in range(len(grid))] for j in range(len(grid))]
+    # winning_grid = [[-1 for i in range(len(grid))] for j in range(len(grid))]
     a_grid = [[-1 for i in range(len(grid))] for j in range(len(grid))]
     b_grid = [[-1 for i in range(len(grid))] for j in range(len(grid))]
     cover_grid = [[-1 for i in range(len(grid))] for j in range(len(grid))]
@@ -106,11 +106,23 @@ def load_t_grid(path):
 
     for j in range(len(grid)):
         for i in range(len(grid)):
-            times = grid[j][i].split("|")
-            winning_grid[j][i] = int(times[0])
-            a_grid[j][i] = int(times[1])
-            b_grid[j][i] = int(times[2])
-            cover_grid[j][i] = int(times[3])
-            coll_grid[j][i] = int(times[4])
+            # times = grid[j][i].split("|")
+            # winning_grid[j][i] = int(times[0])
+            # a_grid[j][i] = int(times[1])
+            # b_grid[j][i] = int(times[2])
+            # cover_grid[j][i] = int(times[3])
+            # coll_grid[j][i] = int(times[4])
 
-    return winning_grid, a_grid, b_grid, cover_grid, coll_grid
+            a_grid[j][i], b_grid[j][i], cover_grid[j][i], coll_grid[j][i] = None, None, None, None
+            ts = grid[j][i].split("|")
+
+            if ts[0] != 'NULL':
+                a_grid[j][i] = int(ts[0])
+            if ts[1] != 'NULL':
+                b_grid[j][i] = int(ts[1])
+            if ts[2] != 'NULL':
+                cover_grid[j][i] = int(ts[2])
+            if ts[3] != 'NULL':
+                coll_grid[j][i] = int(ts[3])
+
+    return a_grid, b_grid, cover_grid, coll_grid
