@@ -123,7 +123,7 @@ Force MongoDB to Execute All Query Plan Candidates
 -------
 To execute all queries, run:
 
-    $ python3 experiment/experiment_core COLLECTIONNAME -r
+    $ python3 experiment/experiment_core.py COLLECTIONNAME -r
 
 The script will persist results into `query_dir` specified in the config file. Results including:
 * plan_grid: a n * n grid records winning plans
@@ -139,7 +139,7 @@ Result Visualization:
 --------
 To visualize result, and see summaries of the results, run
 
-    $ python3 processing/query_plan_analyzer COLLECTIONNAME INDEXTYPE
+    $ python3 processing/analyze_result.py COLLECTIONNAME INDEXTYPE
     
 All results will be output to `result_dir`
 
