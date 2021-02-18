@@ -103,8 +103,7 @@ During the process, intermidate results will be saved in these three directories
 * `grid_dir`: stores two kinds of 2D array
     * plan_grid: stores winning plans
     * time_grid: records execution time of query plans 
-* grid_dir = ../intermediate-result/grid
-* fig_dir = ../intermediate-result/fig
+* `fig_dir`: visualize what query plans did MongoDB pick during runtime
 
 
 Naming convention of query files:
