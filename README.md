@@ -27,9 +27,9 @@ We use three different versions of MongoDB for the experiment, including v4.4.0 
 * V0: the original MongoDB v4.4.0 release
     * `$ wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon2-4.4.0.tgz`
 * V1: we add collection scan to query plan candidates (based on MongoDB v4.4.0 source code)
-    * https://github.com/DaweiTao/mongo/releases/tag/with-collscan
+    * https://github.com/DaweiTao/mongo/releases/tag/v4.4.0-collscan-added
 * V2: we adjust the productvity of all fetch operations (based on MongoDB v4.4.0 source code)
-    * https://github.com/DaweiTao/mongo/releases/tag/with-collscan-with-fix
+    * https://github.com/DaweiTao/mongo/releases/tag/v4.4.0-fptp-mod
 
 To compile source code and execute binaries, please check [building-mongodb-from-source.md](https://github.com/DaweiTao/mongodb-query-optimizer-evaluation-tool/tree/main/docs/building-mongodb-from-source.md)
    
@@ -139,7 +139,7 @@ Result Visualization:
 --------
 To visualize result, and see summaries of the results, run
 
-    $ python3 processing/query_plan_analyzer COLLECTIONNAME
+    $ python3 processing/query_plan_analyzer COLLECTIONNAME INDEXTYPE
     
 All results will be output to `result_dir`
 
