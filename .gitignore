@@ -130,4 +130,5 @@ dmypy.json
 #intermediate-result/
 #processed-result/
 #result/
+results-archive/
 .idea/
