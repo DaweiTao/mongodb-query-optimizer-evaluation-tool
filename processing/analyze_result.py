@@ -281,7 +281,7 @@ def main(args, conf):
     print("Result dir: {}".format(result_dir))
 
     # pair a plan grid with its corresponding time grid
-    def pare_grids():
+    def pair_grids():
         pairs = []
 
         for tf in time_grid_fns:
@@ -293,7 +293,7 @@ def main(args, conf):
 
         return pairs
 
-    paired_fns = pare_grids()
+    paired_fns = pair_grids()
 
     # plot individual experiment result
     for time_grid_fn, plan_grid_fn in paired_fns:
