@@ -87,6 +87,41 @@ def load_query(path):
     return queries
 
 
+def save_t_grid(grid, granularity, path):
+    a_grid, b_grid, cover_grid, coll_grid = grid
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    f = open(path, "a+")
+    t_grid = [[None for c in range(granularity)] for r in range(granularity)]
+
+    for r in cover_grid:
+        print(r)
+
+    for r in range(granularity):
+        for c in range(granularity):
+            a_t = "NULL"
+            b_t = "NULL"
+            cover_t = "NULL"
+            coll_t = "NULL"
+
+            if a_grid[r][c]:
+                a_t = int(a_grid[r][c])
+
+            if b_grid[r][c]:
+                b_t = int(b_grid[r][c])
+
+            if cover_grid[r][c]:
+                cover_t = int(cover_grid[r][c])
+
+            if coll_grid[r][c]:
+                coll_t = int(coll_grid[r][c])
+
+            t_lst = [str(a_t), str(b_t), str(cover_t), str(coll_t)]
+            t_entry = "|".join(t_lst)
+            t_grid[r][c] = t_entry
+
+    save_grid(t_grid, path)
+
+
 def load_t_grid(path):
     grid_file = open(path, "r")
     grid = []
@@ -118,11 +153,26 @@ def load_t_grid(path):
 
             if ts[0] != 'NULL':
                 a_grid[j][i] = int(ts[0])
+
             if ts[1] != 'NULL':
                 b_grid[j][i] = int(ts[1])
+
             if ts[2] != 'NULL':
                 cover_grid[j][i] = int(ts[2])
+
             if ts[3] != 'NULL':
                 coll_grid[j][i] = int(ts[3])
+
+            # if ts[1] != 'NULL':
+            #     a_grid[j][i] = int(ts[1])
+            #
+            # if ts[2] != 'NULL':
+            #     b_grid[j][i] = int(ts[2])
+            #
+            # if ts[3] != 'NULL':
+            #     cover_grid[j][i] = int(ts[3])
+            #
+            # if ts[4] != 'NULL':
+            #     coll_grid[j][i] = int(ts[4])
 
     return a_grid, b_grid, cover_grid, coll_grid
