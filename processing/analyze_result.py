@@ -2,6 +2,9 @@ import sys
 sys.path.append('../experiment')
 from save_load import load_t_grid
 from save_load import load_grid
+from save_load import save_grid
+from save_load import save_t_grid
+
 from config_reader import get_conf
 import os
 import heapq
@@ -210,6 +213,9 @@ def get_avg_time_grid(time_grid_paths, granularity, idx_type):
 
     for tp in time_grid_paths:
         a_t, b_t, cover_t, coll_t = load_t_grid(tp)
+        for r in coll_t:
+            print(r)
+
         for r in range(granularity):
             for c in range(granularity):
                 if idx_type == 'single':
@@ -296,27 +302,27 @@ def main(args, conf):
     paired_fns = pair_grids()
 
     # plot individual experiment result
-    for time_grid_fn, plan_grid_fn in paired_fns:
-        print(time_grid_fn, plan_grid_fn)
-        identifier = time_grid_fn.replace('.txt', '').split('_')[-1]
-        tp = join(grid_dir, time_grid_fn)
-        pp = join(grid_dir, plan_grid_fn)
-        time_grid = load_t_grid(tp)
-        plan_grid = load_grid(pp)
-        performance_grid, performance_factors, practical_winner_grid = compare_performance(time_grid, plan_grid, granularity)
-        mongo_picked_winner_grid = load_grid(pp)
-        accuracy = calculate_accuracy(practical_winner_grid, plan_grid, granularity)
-        avg_impact = sum(performance_factors) / len(performance_factors)
-        generate_visual(mongo_picked_winner_grid, practical_winner_grid, performance_grid,
-                        avg_performance_impact=avg_impact,
-                        accuracy=accuracy,
-                        result_dir=result_dir,
-                        identifier=identifier,
-                        granularity=granularity,
-                        idx_type=idx_type)
-        print("Accuracy: {}%".format(accuracy))
-        print("Impact factor: {}".format(avg_impact))
-        print("=" * 50)
+    # for time_grid_fn, plan_grid_fn in paired_fns:
+    #     print(time_grid_fn, plan_grid_fn)
+    #     identifier = time_grid_fn.replace('.txt', '').split('_')[-1]
+    #     tp = join(grid_dir, time_grid_fn)
+    #     pp = join(grid_dir, plan_grid_fn)
+    #     time_grid = load_t_grid(tp)
+    #     plan_grid = load_grid(pp)
+    #     performance_grid, performance_factors, practical_winner_grid = compare_performance(time_grid, plan_grid, granularity)
+    #     mongo_picked_winner_grid = load_grid(pp)
+    #     accuracy = calculate_accuracy(practical_winner_grid, plan_grid, granularity)
+    #     avg_impact = sum(performance_factors) / len(performance_factors)
+    #     generate_visual(mongo_picked_winner_grid, practical_winner_grid, performance_grid,
+    #                     avg_performance_impact=avg_impact,
+    #                     accuracy=accuracy,
+    #                     result_dir=result_dir,
+    #                     identifier=identifier,
+    #                     granularity=granularity,
+    #                     idx_type=idx_type)
+    #     print("Accuracy: {}%".format(accuracy))
+    #     print("Impact factor: {}".format(avg_impact))
+    #     print("=" * 50)
 
     # summarize multiple experiment results to generate a comprehensive result
     time_grid_paths = [join(grid_dir, tn) for tn in time_grid_fns]
@@ -333,6 +339,13 @@ def main(args, conf):
                     identifier='comprehensive',
                     granularity=granularity,
                     idx_type=idx_type)
+
+    # save processed results
+    save_t_grid(avg_time_grid, granularity, join(result_dir, "comprehensive_time_grid.txt"))
+    save_grid(majority_plan_grid, join(result_dir, "comprehensive_mongo_choice_plan_grid.txt"))
+    save_grid(comprehensive_optimal_plan_grid, join(result_dir, "comprehensive_optimal_plan_grid.txt"))
+    save_grid(comprehensive_impact_grid, join(result_dir, "comprehensive_impact_grid.txt"))
+
     print("Comprehensive results:")
     print("Accuracy: {}%".format(comprehensive_accuracy))
     print("Impact factor: {}".format(comprehensive_impact))
