@@ -1,0 +1,43 @@
+\section{Extra experiments}
+\textbf{Overview:} I would like to add following experiments to this article. We need to prioritize these sections and put them in right place.
+
+\subsection{Task 1: Increase the diversity of the workload}
+\noindent\textbf{Description: } The experiment in the thesis uses a very simple model. Although it is enough to demonstrate MongoDB's problem, we still need more complex datasets and queries to convince readers that the issue not only related to small datasets but also to datasets with more complex schema and index structure.\\ 
+
+\noindent\textbf{Goal:} The final goal is to produce a plan diagram like the one Haritsa presented in his paper \url{https://dl.acm.org/doi/10.5555/1083592.1083735}, an example would be figure \ref{fig:plandiagram}. But the major difference is that we focus on the performance of the chosen plan instead of query plan cost.\\
+
+\begin{figure}[tph]
+    \centering
+    \includegraphics[width=0.3\linewidth]{images/extra-experiments/plandiagram.png}
+    \caption{Plan diagram}
+    \label{fig:plandiagram}
+\end{figure}
+
+\noindent\textbf{My attempts: } 
+I have checked how Haritsa produces that plan diagram. In the paper, he uses TCP-H workload. The query is a variation of query 7 of the TPC-H benchmark, with selectivity variations on the ORDERS and CUSTOMER relations. \\
+
+\begin{verbatim}
+// The original query 7 of the TPC-H benchmark
+SELECT SUPP_NATION, CUST_NATION, L_YEAR, SUM(VOLUME) AS REVENUE
+FROM ( SELECT N1.N_NAME AS SUPP_NATION, N2.N_NAME AS CUST_NATION, 
+datepart(yy, L_SHIPDATE) AS L_YEAR,
+ L_EXTENDEDPRICE*(1-L_DISCOUNT) AS VOLUME
+ FROM SUPPLIER, LINEITEM, ORDERS, CUSTOMER, NATION N1, NATION N2
+ WHERE S_SUPPKEY = L_SUPPKEY AND O_ORDERKEY = L_ORDERKEY AND C_CUSTKEY = O_CUSTKEY
+ AND S_NATIONKEY = N1.N_NATIONKEY AND C_NATIONKEY = N2.N_NATIONKEY AND
+ ((N1.N_NAME = 'FRANCE' AND N2.N_NAME = 'GERMANY') OR
+ (N1.N_NAME = 'GERMANY' AND N2.N_NAME = 'FRANCE')) AND
+ L_SHIPDATE BETWEEN '1995-01-01' AND '1996-12-31' ) AS SHIPPING
+GROUP BY SUPP_NATION, CUST_NATION, L_YEAR
+ORDER BY SUPP_NATION, CUST_NATION, L_YEAR
+\end{verbatim}
+
+The query above is a typical TPC-H query, involving various complex SQL operations, especially joins and subqueries. For a relational database, this query is very suitable to examine the effectiveness of the query optimizer. However, MongoDB is a NoSQL database, and it is non-relational. We cannot directly apply TPC-H benchmark. Here are two possible solutions:
+1. Make MongoDB adapt to 
+2. 
+
+
+\subsection{Task 2: Investigate MongoDB Query Compiler and Optimizer(Done)}
+\noindent\textbf{Description: } To understand how a MongoDB query is submitted, parsed and optimized before it interacts with MongoDB storage engine. See section 2.5.
+
+

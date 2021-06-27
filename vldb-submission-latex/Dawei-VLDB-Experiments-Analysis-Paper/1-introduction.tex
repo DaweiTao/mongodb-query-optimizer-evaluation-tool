@@ -1,0 +1,20 @@
+\section{Introduction}
+Query optimization is a long-established topic in database management systems. For a given declarative query submitted by a user, there are many possible execution plans, each of which describes a correct way to calculate the result. The plans for a query can vary through orders of magnitude in cost, and so a query optimizer is vital, to choose a good (cheap to evaluate) plan among the possible ones. Most database management systems include an optimizer that is cost-based: it considers a variety of plans, estimates the cost of each plan from statistics, knowledge of the index structures etc, and it then chooses to execute the plan with lowest estimated cost among those it considered. 
+
+MongoDB~\cite{mongodb_2019} is a document-oriented database with rapidly growing popularity. Query optimization in MongoDB uses a very different approach which is not based on estimating costs of queries before they are run, but rather MongoDB runs many execution plans in a round-robin ``race'', allowing each to do a small amount of work at a time. After a point, it considers the outcomes so far, and calculates a score for each plan based on the work done and the number of results produced so far. The plan with the highest score wins the race, and it (alone) continues to be executed to completion as the chosen plan for this query.
+We call the MongoDB technique "first past the post" (\approachName) query optimization.  
+%As far as we know, no previous research has evaluated the effectiveness of the \approachName approach.
+
+The central aim of our work is to evaluate and understand the current implementation of MongoDB's \approachName optimization. 
+In this paper, 
+we explain MongoDB's query optimizing technique in Section~\ref{sec:background}. We describe the innovative way we do the evaluation (and how we visualize the results) in Section~\ref{sec:methodology}.
+The results of this empirical study of MongoDB are in Section~\ref{sec:evaluation}. We find that \approachName in MongoDB has a preference bias, it systematically avoids collection scan even when this is in fact a better plan. We explore the reasons for this in Section~\ref{sec:rootcauseanalysis} then propose an improvement and evaluate its effectiveness.
+
+This paper makes the following contributions:\vspace{-1\baselineskip}
+\begin{enumerate}
+    \item We describe in detail how the \approachName query optimizer in MongoDB chooses query plans.
+    \item We propose an innovative way to evaluate and visualize the impact on query performance of an optimizer's choices. By using this approach, we identify places where the MongoDB query optimizer chooses sub-optimal query plans.
+    Our approach could form the basis of an automated regression testing tool to verify that the query planner in MongoDB improves over time.
+    \item We identify causes of the preference bias of \approachName, in which index scans are systematically chosen even when a collection scan would run faster.
+\end{enumerate}
+
