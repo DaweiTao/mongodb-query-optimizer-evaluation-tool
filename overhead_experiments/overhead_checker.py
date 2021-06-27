@@ -10,10 +10,10 @@ import plotly.graph_objects as go
 import pandas as pd
 
 result_dir = "overhead-result/"
-connection_string = "mongodb://ec2-52-65-17-244.ap-southeast-2.compute.amazonaws.com:27017/"
+connection_string = "mongodb://ec2-3-106-130-112.ap-southeast-2.compute.amazonaws.com:27017/"
 db_name = "experiment0"
 collection_name = "uniform"
-REP = 100
+REP = 10
 N_DOCS = 1000000
 
 
@@ -67,11 +67,11 @@ def generate_query(n_disjunction, a_selectivity, b_selectivity, n_docs):
         query_temp = generate_range_query()
     elif n_disjunction >= 1:
         disjunctions = []
+        range_query = generate_range_query()
 
         for n in range(n_disjunction):
-            disjunctions.append(generate_range_query())
+            disjunctions.append(range_query)
 
-        range_query = generate_range_query()
         query_temp = {
             "a": range_query["a"],
             "b": range_query["b"],
@@ -142,28 +142,20 @@ def measure_overhead(collection, n_disjuction, a_selectivity, b_selectivity, n_d
         cold_runs.append(duration_ms)
         # print("Cold run progress: {}%".format(round(i * 100 / REP)))
 
-    print("drawing")
+    execution_time_lst = []
+    for i in range(REP):
+        client[db_name].command(
+            {"planCacheClear": collection_name}
+        )
+        query_explain = collection.find(query, projection).explain()
+        exec_t = query_explain["executionStats"]["executionTimeMillis"]
+        execution_time_lst.append(int(exec_t))
 
-    cold_run_df = pd.DataFrame(cold_runs, columns=["cold_runs"])
-    hot_run_df = pd.DataFrame(hot_runs, columns=["hot_runs"])
-
-    def remove_outlier_iqr(df):
-        Q1 = df.quantile(0.25)
-        Q3 = df.quantile(0.75)
-        IQR = Q3 - Q1
-        df = df[~((df < (Q1 - 1.5 * IQR)) | (df > (Q3 + 1.5 * IQR))).any(axis=1)]
-        return df
-
-    cold_run_df = remove_outlier_iqr(cold_run_df)
-    hot_run_df = remove_outlier_iqr(hot_run_df)
-    cold_run_len = cold_run_df.shape[0]
-    hot_run_len = hot_run_df.shape[0]
-    df_len = min([cold_run_len, hot_run_len])
-    cold_run_df = cold_run_df.head(df_len).reset_index(drop=True)
-    hot_run_df = hot_run_df.head(df_len).reset_index(drop=True)
-    avg_overhead = cold_run_df["cold_runs"].mean() - hot_run_df["hot_runs"].mean()
-    visualize_overhead(cold_run_df, hot_run_df, avg_overhead, df_len, fig_path)
-    return avg_overhead
+    statistics_df = pd.DataFrame(zip(cold_runs, hot_runs, execution_time_lst), columns=["cold_runs", "hot_runs", "exec_t"])
+    statistics_df = statistics_df[statistics_df.apply(lambda x: (x - x.mean()).abs() < (2 * x.std())).all(1)]
+    avg_overhead = statistics_df["cold_runs"].mean() - statistics_df["hot_runs"].mean()
+    avg_exec_t = statistics_df["exec_t"].mean()
+    return avg_overhead, avg_exec_t
 
 
 if __name__ == '__main__':
@@ -171,66 +163,109 @@ if __name__ == '__main__':
     client = establish_connection(connection_string)
     collection = client[db_name][collection_name]
     create_indexes(collection)
+    selectivity_exp_path = "selectivity-experiments-5/"
+    n_plans_exp_path = "n-plans-experiments-5/"
 
-    experiment_dir = join(result_dir, "selectivity-experiments-3/")
+    experiment_dir = join(result_dir, selectivity_exp_path)
     os.makedirs(os.path.dirname(experiment_dir), exist_ok=True)
-    a_selectivity_selections = [0.1 * x for x in range(1, 11)]
-    b_selectivity_selections = [1] * 10
+    a_selectivity_selections = [0.000001, 0.000005, 0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005,
+                                0.01, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1]
+    # a_selectivity_selections = [0.1 + 0.1 * x for x in range(10)]
+    b_selectivity_selections = [1] * len(a_selectivity_selections)
     n_disjunction = 5
     max_disjunction_solutions = 50
     client.admin.command(({"setParameter": 1, "internalQueryEnumerationMaxOrSolutions": max_disjunction_solutions}))
     id = 0
     overheads = []
+    overhead_per_plan = []
+    execution_time_lst = []
     for (a_s, b_s) in zip(a_selectivity_selections, b_selectivity_selections):
         client[db_name].command({"planCacheClear": collection_name})
-        avg_overhead = measure_overhead(collection=collection,
+        avg_overhead, avg_exec_t = measure_overhead(collection=collection,
                          n_disjuction=n_disjunction,
                          a_selectivity=a_s,
                          b_selectivity=b_s,
                          n_docs=N_DOCS,
                          fig_path=join(experiment_dir, "{}-a-{:.2f}-b-{:.2f}.html".format(id, a_s, b_s)))
-        overheads.append(avg_overhead/53)
+        overheads.append(avg_overhead)
+        overhead_per_plan.append(avg_overhead / (max_disjunction_solutions + 3))
+        execution_time_lst.append(avg_exec_t)
         id += 1
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=a_selectivity_selections, y=overheads,
-                             mode='lines',
-                             fill="tonexty",
-                             line=dict(color='#d62728', width=4)))
+
+    fig.add_trace(go.Bar(name="Overhead for all plans",
+                             x=[str(x) for x in a_selectivity_selections],
+                             y=overheads,
+                             # mode='lines',
+                             # line=dict(color='#d62728', width=4)
+                         ))
+    fig.add_trace(go.Bar(name="Average overhead per plan",
+                             x=[str(x) for x in a_selectivity_selections],
+                             y=overhead_per_plan,
+                             # mode='lines',
+                             # line=dict(color='#1f77b4', width=4)
+                         ))
+    fig.add_trace(go.Bar(name="Execution time of the optimal plan",
+                             x=[str(x) for x in a_selectivity_selections],
+                             y=execution_time_lst,
+                         ))
+    fig.add_trace(go.Bar(name="Overhead Ratio",
+                             x=[str(x) for x in a_selectivity_selections],
+                             y=[o / e for (o, e) in zip(overhead_per_plan, execution_time_lst)],
+                         ))
     fig.update_layout(title="Overhead vs Selectivity",
                       xaxis_title='Selectivity of the query',
                       yaxis_title='Latency in Milliseconds(ms)',
                       title_x=0.5)
-    fig.write_html(join(experiment_dir, "summary.html"))
+    fig.write_html(join(experiment_dir, "summary-selectivity-exp.html"))
 
-    # experiment_dir = join(result_dir, "n-candidates-experiments-2/")
-    # os.makedirs(os.path.dirname(experiment_dir), exist_ok=True)
-    # a_selectivity = 0.5
-    # b_selectivity = 1
-    # n_disjunction = 5
-    # max_disjunction_solutions = [x * 5 for x in range(11)]
-    # id = 0
-    # overheads = []
-    # for n in max_disjunction_solutions:
-    #     client.admin.command(({"setParameter": 1, "internalQueryEnumerationMaxOrSolutions": n}))
-    #     client[db_name].command({"planCacheClear": collection_name})
-    #     avg_overhead = measure_overhead(collection=collection,
-    #                                     n_disjuction=n_disjunction,
-    #                                     a_selectivity=a_selectivity,
-    #                                     b_selectivity=b_selectivity,
-    #                                     n_docs=N_DOCS,
-    #                                     fig_path=join(experiment_dir, "{}-max-solutions-{}.html".format(id, n)))
-    #
-    #     n += 3
-    #     overheads.append(avg_overhead / n)
-    #     id += 1
-    # fig = go.Figure()
-    # max_disjunction_solutions = [x + 3 for x in max_disjunction_solutions]
-    # fig.add_trace(go.Scatter(x=max_disjunction_solutions, y=overheads,
-    #                          mode='lines',
-    #                          fill="tonexty",
-    #                          line=dict(color='#d62728', width=4)))
-    # fig.update_layout(title="Overhead vs # of query plans",
-    #                   xaxis_title='# of query plans',
-    #                   yaxis_title='Latency in Milliseconds(ms)',
-    #                   title_x=0.5)
-    # fig.write_html(join(experiment_dir, "summary.html"))
+    experiment_dir = join(result_dir, n_plans_exp_path)
+    os.makedirs(os.path.dirname(experiment_dir), exist_ok=True)
+    a_selectivity = 0.5
+    b_selectivity = 1
+    n_disjunction = 5
+    max_disjunction_solutions = [x * 5 for x in range(11)]
+    id = 0
+    overheads = []
+    overhead_per_plan = []
+    execution_time_lst = []
+    for n in max_disjunction_solutions:
+        client.admin.command(({"setParameter": 1, "internalQueryEnumerationMaxOrSolutions": n}))
+        client[db_name].command({"planCacheClear": collection_name})
+        avg_overhead, avg_exec_t = measure_overhead(collection=collection,
+                                        n_disjuction=n_disjunction,
+                                        a_selectivity=a_selectivity,
+                                        b_selectivity=b_selectivity,
+                                        n_docs=N_DOCS,
+                                        fig_path=join(experiment_dir, "{}-max-solutions-{}.html".format(id, n)))
+        overheads.append(avg_overhead)
+        overhead_per_plan.append(avg_overhead / (n + 3))
+        execution_time_lst.append(avg_exec_t)
+        id += 1
+    fig = go.Figure()
+    max_disjunction_solutions = [str(x + 3) for x in max_disjunction_solutions]
+    fig.add_trace(go.Bar(name="Overhead for all plans",
+                             x=max_disjunction_solutions,
+                             y=overheads,
+                             # mode='lines',
+                             # line=dict(color='#d62728', width=4)
+                         ))
+    fig.add_trace(go.Bar(name="Average overhead per plan",
+                             x=max_disjunction_solutions,
+                             y=overhead_per_plan,
+                             # mode='lines',
+                             # line=dict(color='#1f77b4', width=4)
+                         ))
+    fig.add_trace(go.Bar(name="Execution time of the optimal plan",
+                             x=max_disjunction_solutions,
+                             y=execution_time_lst,
+                         ))
+    fig.add_trace(go.Bar(name="Overhead Ratio",
+                             x=max_disjunction_solutions,
+                             y=[o / e for (o, e) in zip(overhead_per_plan, execution_time_lst)],
+                         ))
+    fig.update_layout(title="Overhead vs # of query plans",
+                      xaxis_title='# of query plans',
+                      yaxis_title='Latency in Milliseconds(ms)',
+                      title_x=0.5)
+    fig.write_html(join(experiment_dir, "summary-n-plans-exp.html"))
