@@ -150,19 +150,19 @@ def compute_optimal_plan_alpha_matrix(time_grids, granularity):
 
 
 if __name__ == '__main__':
-    grid_path = "../results/processed-result-original/uniform/"
+    processed_grid_path = "../results/processed-result-original/uniform/"
     intermediate_grid_path = "../results/intermediate-result-original/grid/uniform/"
     granularity = 50
 
     # mongo choice
-    winner_grid = load_grid(path.join(grid_path, "comprehensive_mongo_choice_plan_grid.txt"))
+    winner_grid = load_grid(path.join(processed_grid_path, "comprehensive_mongo_choice_plan_grid.txt"))
     mongo_choice_fns = [fn for fn in listdir(intermediate_grid_path) if isfile(join(intermediate_grid_path, fn)) and 'plan_grid' in fn]
     mongo_choices = [load_grid(path.join(intermediate_grid_path, fn)) for fn in mongo_choice_fns]
     mongo_choice_alpha_matrix = compute_mongo_choice_alpha_matrix(winner_grid, mongo_choices, granularity)
 
     # practical results
-    time_grids = load_t_grid(path.join(grid_path, "comprehensive_time_grid.txt"))
-    optimal_plan_grid = load_grid(path.join(grid_path, "comprehensive_optimal_plan_grid.txt"))
+    time_grids = load_t_grid(path.join(processed_grid_path, "comprehensive_time_grid.txt"))
+    optimal_plan_grid = load_grid(path.join(processed_grid_path, "comprehensive_optimal_plan_grid.txt"))
     optimal_plan_alpha_matrix = compute_optimal_plan_alpha_matrix(time_grids, granularity)
 
     show_ties(
