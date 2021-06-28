@@ -13,7 +13,7 @@ result_dir = "overhead-result/"
 connection_string = "mongodb://ec2-3-106-130-112.ap-southeast-2.compute.amazonaws.com:27017/"
 db_name = "experiment0"
 collection_name = "uniform"
-REP = 10
+REP = 30
 N_DOCS = 1000000
 
 
@@ -163,14 +163,13 @@ if __name__ == '__main__':
     client = establish_connection(connection_string)
     collection = client[db_name][collection_name]
     create_indexes(collection)
-    selectivity_exp_path = "selectivity-experiments-5/"
-    n_plans_exp_path = "n-plans-experiments-5/"
+    selectivity_exp_path = "selectivity-experiments-6/"
+    n_plans_exp_path = "n-plans-experiments-6/"
 
     experiment_dir = join(result_dir, selectivity_exp_path)
     os.makedirs(os.path.dirname(experiment_dir), exist_ok=True)
     a_selectivity_selections = [0.000001, 0.000005, 0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005,
                                 0.01, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1]
-    # a_selectivity_selections = [0.1 + 0.1 * x for x in range(10)]
     b_selectivity_selections = [1] * len(a_selectivity_selections)
     n_disjunction = 5
     max_disjunction_solutions = 50
@@ -205,19 +204,23 @@ if __name__ == '__main__':
                              # mode='lines',
                              # line=dict(color='#1f77b4', width=4)
                          ))
-    fig.add_trace(go.Bar(name="Execution time of the optimal plan",
-                             x=[str(x) for x in a_selectivity_selections],
-                             y=execution_time_lst,
-                         ))
-    fig.add_trace(go.Bar(name="Overhead Ratio",
-                             x=[str(x) for x in a_selectivity_selections],
-                             y=[o / e for (o, e) in zip(overhead_per_plan, execution_time_lst)],
-                         ))
+
     fig.update_layout(title="Overhead vs Selectivity",
                       xaxis_title='Selectivity of the query',
-                      yaxis_title='Latency in Milliseconds(ms)',
+                      yaxis_title='Time in Milliseconds(ms)',
                       title_x=0.5)
-    fig.write_html(join(experiment_dir, "summary-selectivity-exp.html"))
+    fig.write_html(join(experiment_dir, "overhead-vs-selectivity.html"))
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(name="Overhead Ratio",
+                             x=[str(x) for x in a_selectivity_selections],
+                             y=[round(o / e, 3) for (o, e) in zip(overhead_per_plan, execution_time_lst)],
+                         ))
+    fig.update_layout(title="Overhead Ratio vs Selectivity",
+                      xaxis_title='Selectivity of the query',
+                      yaxis_title='Overhead / Execution time',
+                      title_x=0.5)
+    fig.write_html(join(experiment_dir, "overhead-ratio-vs-selectivity.html"))
 
     experiment_dir = join(result_dir, n_plans_exp_path)
     os.makedirs(os.path.dirname(experiment_dir), exist_ok=True)
@@ -243,7 +246,7 @@ if __name__ == '__main__':
         execution_time_lst.append(avg_exec_t)
         id += 1
     fig = go.Figure()
-    max_disjunction_solutions = [str(x + 3) for x in max_disjunction_solutions]
+
     fig.add_trace(go.Bar(name="Overhead for all plans",
                              x=max_disjunction_solutions,
                              y=overheads,
@@ -256,16 +259,19 @@ if __name__ == '__main__':
                              # mode='lines',
                              # line=dict(color='#1f77b4', width=4)
                          ))
-    fig.add_trace(go.Bar(name="Execution time of the optimal plan",
-                             x=max_disjunction_solutions,
-                             y=execution_time_lst,
-                         ))
+    fig.update_layout(title="Overhead vs # of query plans",
+                      xaxis_title='# of query plans',
+                      yaxis_title='Time in Milliseconds(ms)',
+                      title_x=0.5)
+    fig.write_html(join(experiment_dir, "overhead-vs-n-plans.html"))
+
+    fig = go.Figure()
     fig.add_trace(go.Bar(name="Overhead Ratio",
                              x=max_disjunction_solutions,
                              y=[o / e for (o, e) in zip(overhead_per_plan, execution_time_lst)],
                          ))
-    fig.update_layout(title="Overhead vs # of query plans",
+    fig.update_layout(title="Overhead Ratio vs # of query plans",
                       xaxis_title='# of query plans',
-                      yaxis_title='Latency in Milliseconds(ms)',
+                      yaxis_title='Overhead / Execution time',
                       title_x=0.5)
-    fig.write_html(join(experiment_dir, "summary-n-plans-exp.html"))
+    fig.write_html(join(experiment_dir, "overhead-ratio-vs-n-plans.html"))
