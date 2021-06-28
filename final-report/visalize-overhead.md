@@ -49,7 +49,7 @@ We found that a query that contains disjunction produces large number of query p
 
 [More on this](https://jira.mongodb.org/browse/SERVER-36393)
 
-In general, from version 3.6, we can also able control the maximum number of query plans 
+In general, from version 3.6, we can control the maximum number of query plans 
  for contained $or queries. The way of doing this is setting the parameter 
  `internalQueryEnumerationMaxOrSolutions` during startup and **runtime**.
  
