@@ -44,4 +44,34 @@ That means, we can compute an approximate value of overhead of FPTP opotimizatio
 2. run the same query with hot cache
 3. measure the time difference Latency<sub>coldCache</sub> - Latency<sub>hotCache</sub>
 
-Control the number
+For the experiment, we need a type of query which can generate multiple query plans.
+We found that a query that contains disjunction produces large number of query plans.
+
+[More on this](https://jira.mongodb.org/browse/SERVER-36393)
+
+In general, from version 3.6, we can also able control the maximum number of query plans 
+ for contained $or queries. The way of doing this is setting the parameter 
+ `internalQueryEnumerationMaxOrSolutions` during startup and **runtime**.
+ 
+An example (pymongo driver) would be
+```python
+client.admin.command(({
+    "setParameter": 1, 
+    "internalQueryEnumerationMaxOrSolutions": <max_disjunction_solutions>
+}))
+```
+
+For the experiment, we generate a query that can generate
+number of query plans greater than desired `<max_disjunction_solutions>`. Then we gradually
+ decrease the number of `<max_disjunction_solutions>`
+by modifying the <max_disjunction_solutions> during runtime.
+
+How To Run The Experiment
+----
+Run
+```shell script
+python3 overhead_experiments/overhead_checker.py
+```
+
+
+
