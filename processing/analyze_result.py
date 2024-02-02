@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../experiment')
+sys.path.append('experiment')
 from save_load import load_t_grid
 from save_load import load_grid
 from save_load import save_grid
@@ -197,7 +197,8 @@ def generate_visual(mongo_choice_grid,
     cbar.set_label("Impact factor", fontsize=25)
     cbar.ax.tick_params(labelsize=18)
     format_fig()
-    fig_name = "{}_summary_accuracy={:.2f}_impact_factor={:.5f}.png".format(identifier, accuracy, avg_performance_impact)
+    #fig_name = "{}_summary_accuracy={:.2f}_impact_factor={:.5f}.png".format(identifier, accuracy, avg_performance_impact)
+    fig_name = "{}_summary_accuracy.png".format(identifier)
     plt.figure(2).savefig(join(result_dir, fig_name), bbox_inches='tight')
     plt.close(fig='all')
 
@@ -363,5 +364,5 @@ if __name__ == '__main__':
                         metavar='INDEXTYPE',
                         help='specify index type')
     args = parser.parse_args()
-    conf = get_conf('../experiment/config.ini')
+    conf = get_conf('config.ini')
     main(args, conf)

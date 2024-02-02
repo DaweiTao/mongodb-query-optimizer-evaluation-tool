@@ -15,6 +15,8 @@ To build MongoDB, you will need:
   * See the section "Python Prerequisites" below.
 * About 13 GB of free disk space for the core binaries (`mongod`,`mongos`, and `mongo`) and about 600 GB for the install-all target.
 
+* Full list on current Amazon AMI 2023:
+    `sudo dnf install python3-virtualenv git gcc-c++ lld libcurl-devel openssl-devel xz-devel python3-devel patch ninja-build`
 
 Source Code
 ------

@@ -105,7 +105,7 @@ def import_dataset(collection, dataset_path):
     rows = load_doc(dataset_path)
     df = pd.DataFrame(rows, columns=['a', 'b'])
     data_json = json.loads(df.to_json(orient="records"))
-    collection.insert(data_json)
+    collection.insert_many(data_json)
 
 
 @logging_decorator

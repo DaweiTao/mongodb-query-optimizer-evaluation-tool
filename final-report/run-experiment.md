@@ -110,7 +110,7 @@ Naming convention of figures:
     *  `<accuracy>` is (the total number of correct choice / the total number of cases).
     *  `<factor>` is the average impact factor: sum(impact factor for each case) / total number of cases.
 
-Naming convention of girds:
+Naming convention of grids:
 * MongoDB's choices: 
 `comprehensive_mongo_choice_plan_grid.txt`
 ```

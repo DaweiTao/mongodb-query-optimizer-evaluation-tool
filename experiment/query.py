@@ -55,7 +55,7 @@ def generate_query(collection,
     b_max = collection.find_one(sort=[("b", -1)])["b"]
 
     def map_to_index(predicate):
-        selectivity = collection.count(predicate) / dataset_size
+        selectivity = collection.count_documents(predicate) / dataset_size
         return math.floor(selectivity * granularity)
 
     @logging_decorator
