@@ -1,0 +1,21 @@
+diff -ur mongodb-src-r7.0.1-orig/src/mongo/db/query/plan_ranker.h mongodb-src-r7.0.1/src/mongo/db/query/plan_ranker.h
+--- mongodb-src-r7.0.1-orig/src/mongo/db/query/plan_ranker.h	2023-08-23 06:09:42.000000000 +1000
++++ mongodb-src-r7.0.1/src/mongo/db/query/plan_ranker.h	2023-09-08 15:31:46.672304945 +1000
+@@ -86,7 +86,7 @@
+         // be greater than that.
+         const double baseScore = 1;
+ 
+-        const auto productivity = calculateProductivity(stats);
++        auto productivity = calculateProductivity(stats);
+         const auto advances = getNumberOfAdvances(stats);
+         const double epsilon =
+             std::min(1.0 / static_cast<double>(10 * (advances > 0 ? advances : 1)), 1e-4);
+@@ -96,6 +96,8 @@
+         double noFetchBonus = epsilon;
+         if (hasStage(STAGE_FETCH, stats)) {
+             noFetchBonus = 0;
++            // Really prefer avoiding fetches
++            productivity /= 2;
+         }
+ 
+         // In the case of ties, prefer solutions without a blocking sort

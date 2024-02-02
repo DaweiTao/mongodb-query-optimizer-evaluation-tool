@@ -1,0 +1,12 @@
+diff -ur mongodb-src-r7.0.1-orig/src/mongo/db/query/query_planner.cpp mongodb-src-r7.0.1/src/mongo/db/query/query_planner.cpp
+--- mongodb-src-r7.0.1-orig/src/mongo/db/query/query_planner.cpp	2023-08-23 06:09:42.000000000 +1000
++++ mongodb-src-r7.0.1/src/mongo/db/query/query_planner.cpp	2023-09-11 10:47:14.803070726 +1000
+@@ -1584,7 +1584,7 @@
+     }
+ 
+     // The caller can explicitly ask for a collscan.
+-    bool collscanRequested = (params.options & QueryPlannerParams::INCLUDE_COLLSCAN);
++    bool collscanRequested = true || (params.options & QueryPlannerParams::INCLUDE_COLLSCAN);
+ 
+     // No indexed plans?  We must provide a collscan if possible or else we can't run the query.
+     bool collScanRequired = 0 == out.size();
