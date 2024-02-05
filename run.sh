@@ -1,31 +1,53 @@
 #!/bin/sh
 
-# Build the config file matching the version being tested
+# Get the full directory of the experiment code
+expdir=`dirname $0`
+expdir=$(cd $expdir && pwd)
+
+# Command line argument processing
 # v=orig
 # v=with-coll
 # v=with-coll-with-fix
-v=${1:orig}
-rm -f config.ini && sed -e 's/^[^;].*result-/;\0/' -e 's/^;\(.*result-'$v'\/\)/\1/' < experiment/config.ini > config.ini
+v=${1:-orig}
+indexes=${2:-cover}
 
-rm -rf ../assets ../results
-mkdir ../assets ../results
+mdbver=7.0.1
 
-# Stop / start MongoDB?
+export PYTHONPATH=$PYTHONPATH:$expdir
+
+# Setup the results directory and change to there
+d=../results-$indexes/v$mdbver
+[ $v != 'orig' ] && d=$d-$v
+
+echo "Creating results directory $d"
+rm -rf $d
+mkdir -p $d
+cd $d
+
+# Redirect output to a file in the results directory
+exec > run.sh.out 2>&1
+
+echo "FPTP for MongoDB $mdbver run.sh $*"
+date
+
+# Generate the config.ini file used by scripts below
+sed -e 's/^[^;].*result-/;\0/' -e 's/^;\(.*result-'$v'\/\)/\1/' < $expdir/experiment/config.ini > config.ini
+
+# Stop / start MongoDB
 pkill -9 mongod
 sleep 1
 rm -rf data ; mkdir data
-./build/install-$v/bin/mongod --dbpath=`pwd`/data --logpath=`pwd`/mongod.log --fork
+$expdir/build/install-$v/bin/mongod --dbpath=`pwd`/data --logpath=`pwd`/mongod.log --fork
 sleep 1
 
-# Run the experiments
+# Setup the experiments
 c=uniform
 n=5
-./venv/bin/python experiment/experiment_core.py $c -b $c
-./venv/bin/python experiment/experiment_core.py $c -q $n
+$expdir/venv/bin/python $expdir/experiment/experiment_core.py $c -b $c
+$expdir/venv/bin/python $expdir/experiment/experiment_core.py $c -q $n
 
 # Remove indexes if necessary
 unset rm1 rm2
-indexes=${2:-cover}
 case $indexes in
 both|single)
 	rm1='db.uniform.dropIndex("coverIdx")' ;;
@@ -35,10 +57,14 @@ single)
 	rm2='db.uniform.dropIndex("aIdx")' ;;
 esac
 
-./build/install-orig/bin/mongo <<EOF
+$expdir/build/install-orig/bin/mongo <<EOF
 use experiment0
 $rm1
 $rm2
 EOF
 
-./venv/bin/python experiment/experiment_core.py $c -r
+# Run the experiments
+$expdir/venv/bin/python $expdir/experiment/experiment_core.py $c -r
+
+# Process the results, generate graphs
+$expdir/venv/bin/python $expdir/processing/analyze_result.py $c $indexes
