@@ -13,8 +13,6 @@ indexes=${2:-cover}
 
 mdbver=7.0.1
 
-export PYTHONPATH=$PYTHONPATH:$expdir
-
 # Setup the results directory and change to there
 d=../results-$indexes/v$mdbver
 [ $v != 'orig' ] && d=$d-$v
@@ -67,4 +65,5 @@ EOF
 $expdir/venv/bin/python $expdir/experiment/experiment_core.py $c -r
 
 # Process the results, generate graphs
+export PYTHONPATH=$PYTHONPATH:$expdir/experiment
 $expdir/venv/bin/python $expdir/processing/analyze_result.py $c $indexes
