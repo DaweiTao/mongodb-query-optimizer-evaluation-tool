@@ -29,9 +29,12 @@ Use the Amazon Linux 2023 AMI
 Make sure you have ssh access (keypair and ssh is permitted inbound from your client)
 2. Log in and run:
 ```sh
-$ sudo bash ./prep.sh
-$ build-all.sh
-$ run-all.sh
+$ wget -c 'https://github.com/michaelcahill/mongodb-fptp-paper/archive/refs/heads/main.zip'
+$ unzip main.zip && rm main.zip
+
+$ sudo bash ./mongodb-fptp-paper-main/prep.sh
+$ ./mongodb-fptp-paper-main/build-all.sh
+$ ./mongodb-fptp-paper-main/run-all.sh
 ```
 3. Data and charts will be generated in the `results-cover`, `results-both` and `results-single`
 directories, corresponding to different index choices.

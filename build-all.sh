@@ -9,6 +9,7 @@ cd ..
 
 # Build MongoDB binaries and setup to run FPTP experiments
 wget -c https://fastdl.mongodb.org/src/mongodb-src-r7.0.1.tar.gz
+tar xvf mongodb-src-r7.0.1.tar.gz
 cd mongodb-src-r7.0.1
 
 ## Install Python requirements for the MongoDB build
