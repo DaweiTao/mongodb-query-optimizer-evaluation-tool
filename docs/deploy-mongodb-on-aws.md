@@ -6,14 +6,16 @@ on the AWS instance.
 
 Where to Get Source Code
 ----
-We use three different versions of MongoDB for the experiment, including v4.4.0 release and two other modifed versions:
+We use three different versions of MongoDB for the experiment, including v7.0.1 release and two other modifed versions:
 
-* V0: the original MongoDB v4.4.0 release
-    * `$ wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon2-4.4.0.tgz`
-* V1: we add collection scan to query plan candidates (based on MongoDB v4.4.0 source code)
-    * [V1 release](https://github.com/DaweiTao/mongo/releases/tag/v4.4.0-collscan-added)
-* V2: we adjust the productvity of all fetch operations (based on MongoDB v4.4.0 source code)
-    * [V2 release](https://github.com/DaweiTao/mongo/releases/tag/v4.4.0-fptp-mod)
+* V0: MongoDB v7.0.1 release
+    * `$ wget https://fastdl.mongodb.org/src/mongodb-src-r7.0.1.tar.gz`
+    * `$ tar xvf mongodb-src-r7.0.1.tar.gz`
+    * `$ cd mongodb-src-r7.0.1`
+* V1: add collection scan to query plan candidates (based on MongoDB v7.0.1 source code)
+    * `$ patch -p1 .../mongoversions/7.0.1-V1-with-coll.diff`
+* V2: adjust the productvity of all fetch operations (based on MongoDB v7.0.1 source code)
+    * `$ patch -p1 .../mongoversions/7.0.1-V2-with-fix.diff`
 
 The query optimizer of MongoDB V0 never chooses collection scan. Because collection
  scan is not in the query plan candidates. In V1 we add collection scan to query plan candidates. The query optimizer 
@@ -26,9 +28,9 @@ AWS Instance Minimum Requirement
 ----
 | Instance Size | vCPU | Memory (GiB) | Instance Storage(GiB) |
 |---------------|------|:------------:|-----------------------|
-| t2.xlarge     | 4    | 16           | 50                    |
+| m6id.xlarge   | 2    | 8            | 118                   |
 
-**Note**: SSD is recommended. 
+**Note**: SSD is recommended, and building MongoDB from source will be much faster on larger instances.
 
 Building MongoDB From Source 
 ----
@@ -55,30 +57,6 @@ To install lzma dlevel （Devel libraries & headers for liblzma) on Linux, run:
 
 Install mongod
 ----
-Upgrade g++ version:
-* Check [this guide](https://medium.com/@bipul.k.kuri/install-latest-gcc-on-centos-linux-release-7-6-a704a11d943d)
-for more information
-* If the mirror in the article doesn't work, try this one:\
-https://ftp.gnu.org/gnu/gcc/gcc-8.2.0/gcc-8.2.0.tar.gz
-* All steps together (shell script):
-```shell script
-#!/bin/sh
-GCC_VERSION=8.2.0
-sudo yum -y update
-sudo yum -y install bzip2 wget gcc gcc-c++ gmp-devel mpfr-devel libmpc-devel make
-gcc --version
-wget http://gnu.mirror.constant.com/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.gz
-tar zxf gcc-$GCC_VERSION.tar.gz
-mkdir gcc-build
-cd gcc-build
-../gcc-$GCC_VERSION/configure --enable-languages=c,c++ --disable-multilib
-make -j$(nproc)
-sudo make install
-gcc --version
-cd ..
-rm -rf gcc-build
-```
-
 Install install libcurl, run:
 
 ```

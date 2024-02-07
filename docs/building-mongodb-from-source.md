@@ -20,12 +20,14 @@ To build MongoDB, you will need:
 
 Source Code
 ------
-* V0: MongoDB v4.4.0 release
-    * `$ wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon2-4.4.0.tgz`
-* V1: add collection scan to query plan candidates (based on MongoDB v4.4.0 source code)
-    * https://github.com/DaweiTao/mongo/archive/mongo-with-collscan.tar.gz
-* V2: adjust the productvity of all fetch operations (based on MongoDB v4.4.0 source code)
-    * https://github.com/DaweiTao/mongo/archive/mongo-wiith-collscan-with-fix.tar.gz
+* V0: MongoDB v7.0.1 release
+    * `$ wget https://fastdl.mongodb.org/src/mongodb-src-r7.0.1.tar.gz`
+    * `$ tar xvf mongodb-src-r7.0.1.tar.gz`
+    * `$ cd mongodb-src-r7.0.1`
+* V1: add collection scan to query plan candidates (based on MongoDB v7.0.1 source code)
+    * `$ patch -p1 .../mongoversions/7.0.1-V1-with-coll.diff`
+* V2: adjust the productvity of all fetch operations (based on MongoDB v7.0.1 source code)
+    * `$ patch -p1 .../mongoversions/7.0.1-V2-with-fix.diff`
 
 
 Python Prerequisites
