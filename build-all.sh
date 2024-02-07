@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# Install requirements for the experiment code
-cd mongodb-fptp-paper-main
-virtualenv venv
-venv/bin/pip install requirements.txt
-ln -s ../mongodb-src-r7.0.1/build .
-cd ..
-
 # Build MongoDB binaries and setup to run FPTP experiments
 wget -c https://fastdl.mongodb.org/src/mongodb-src-r7.0.1.tar.gz
 tar xvf mongodb-src-r7.0.1.tar.gz
